@@ -101,8 +101,20 @@ export default function App() {
       const topSchedule = activeSchedules[0];
 
       try {
-        const content = await apiClient.current.getContent(topSchedule.contentId);
-        setCurrentContent(content);
+        // Handle both single content and playlists
+        if (topSchedule.contentId) {
+          // Single content
+          const content = await apiClient.current.getContent(topSchedule.contentId);
+          setCurrentContent(content);
+        } else if (topSchedule.contentIds && topSchedule.contentIds.length > 0) {
+          // Playlist - for now, just show the first item
+          // TODO: Implement playlist rotation logic
+          const content = await apiClient.current.getContent(topSchedule.contentIds[0]);
+          setCurrentContent(content);
+        } else {
+          console.error('Schedule has no content or contentIds');
+          setError('Schedule configuration error');
+        }
         setError('');
       } catch (err) {
         console.error('Failed to load content:', err);
