@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import type { Content } from '../types';
 
 interface ContentRendererProps {
@@ -10,14 +10,23 @@ interface ContentRendererProps {
 
 export default function ContentRenderer({ content, apiUrl, apiKey, onComplete }: ContentRendererProps) {
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+  const onCompleteRef = useRef(onComplete);
+
+  // Keep the ref up to date
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
 
   useEffect(() => {
     let timer: number | undefined;
 
+    console.log('[CONTENT RENDERER] Setting up timer for', content.type, 'duration:', content.duration, 'seconds');
+
     if (content.type === 'image' || content.type === 'text') {
       // Auto-advance after duration
       timer = window.setTimeout(() => {
-        onComplete?.();
+        console.log('[CONTENT RENDERER] Timer completed, calling onComplete');
+        onCompleteRef.current?.();
       }, content.duration * 1000);
     } else if (content.type === 'slideshow' && content.metadata?.slides) {
       const slides = content.metadata.slides as string[];
@@ -27,7 +36,8 @@ export default function ContentRenderer({ content, apiUrl, apiKey, onComplete }:
         setCurrentSlideIndex((prev) => {
           const next = prev + 1;
           if (next >= slides.length) {
-            onComplete?.();
+            console.log('[CONTENT RENDERER] Slideshow completed, calling onComplete');
+            onCompleteRef.current?.();
             return prev;
           }
           return next;
@@ -37,11 +47,12 @@ export default function ContentRenderer({ content, apiUrl, apiKey, onComplete }:
 
     return () => {
       if (timer) {
+        console.log('[CONTENT RENDERER] Cleaning up timer');
         window.clearTimeout(timer);
         window.clearInterval(timer);
       }
     };
-  }, [content, onComplete]);
+  }, [content.id, content.type, content.duration]);
 
   // Get the file URL using content ID endpoint with API key for authentication
   const getFileUrl = () => {
@@ -69,7 +80,10 @@ export default function ContentRenderer({ content, apiUrl, apiKey, onComplete }:
           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
           autoPlay
           muted
-          onEnded={onComplete}
+          onEnded={() => {
+            console.log('[CONTENT RENDERER] Video ended, calling onComplete');
+            onCompleteRef.current?.();
+          }}
         />
       );
 
