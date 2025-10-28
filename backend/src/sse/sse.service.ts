@@ -281,4 +281,18 @@ export class SseService {
       timestamp: new Date().toISOString(),
     });
   }
+
+  /**
+   * Listen for schedule changes (created, updated, deleted)
+   */
+  @OnEvent('schedule.created')
+  @OnEvent('schedule.updated')
+  @OnEvent('schedule.deleted')
+  handleScheduleChange(payload: any) {
+    this.logger.log(`Schedule change detected: ${JSON.stringify(payload)}`);
+    this.broadcast('schedule.changed', {
+      ...payload,
+      timestamp: new Date().toISOString(),
+    });
+  }
 }

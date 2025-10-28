@@ -198,6 +198,11 @@ export default function App() {
           window.location.reload();
         });
 
+        eventSource.addEventListener('schedule.changed', () => {
+          console.log('Schedule changed event received - forcing full page reload');
+          window.location.reload();
+        });
+
         eventSource.addEventListener('schedule.triggered', () => {
           console.log('Schedule triggered event received');
           loadSchedules(false);
