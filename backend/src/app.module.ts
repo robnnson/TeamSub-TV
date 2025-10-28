@@ -13,6 +13,7 @@ import { SchedulingModule } from './scheduling/scheduling.module';
 import { SettingsModule } from './settings/settings.module';
 import { SseModule } from './sse/sse.module';
 import { PlaylistsModule } from './playlists/playlists.module';
+import { DisplayGroupsModule } from './display-groups/display-groups.module';
 
 @Module({
   imports: [
@@ -66,6 +67,7 @@ import { PlaylistsModule } from './playlists/playlists.module';
     UsersModule,
     ContentModule,
     DisplaysModule,
+    DisplayGroupsModule,
     SchedulingModule,
     SettingsModule,
     SseModule,

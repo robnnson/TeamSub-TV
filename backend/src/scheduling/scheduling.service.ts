@@ -33,11 +33,16 @@ export class SchedulingService implements OnModuleInit {
    * Create a new schedule
    */
   async create(createScheduleDto: CreateScheduleDto): Promise<Schedule> {
-    const { displayId, contentId, contentIds, startTime, endTime, recurrenceRule, priority, isActive } = createScheduleDto;
+    const { displayId, displayGroupId, contentId, contentIds, playlistId, startTime, endTime, recurrenceRule, priority, isActive } = createScheduleDto;
 
-    // Validate that either contentId or contentIds is provided
-    if (!contentId && (!contentIds || contentIds.length === 0)) {
-      throw new BadRequestException('Either contentId or contentIds must be provided');
+    // Validate that either displayId or displayGroupId is provided
+    if (!displayId && !displayGroupId) {
+      throw new BadRequestException('Either displayId or displayGroupId must be provided');
+    }
+
+    // Validate that either contentId, contentIds, or playlistId is provided
+    if (!contentId && (!contentIds || contentIds.length === 0) && !playlistId) {
+      throw new BadRequestException('Either contentId, contentIds, or playlistId must be provided');
     }
 
     // Validate date range
@@ -55,9 +60,11 @@ export class SchedulingService implements OnModuleInit {
     }
 
     const schedule = this.scheduleRepository.create({
-      displayId,
+      displayId: displayId || null,
+      displayGroupId: displayGroupId || null,
       contentId: contentId || null,
       contentIds: contentIds || null,
+      playlistId: playlistId || null,
       startTime: new Date(startTime),
       endTime: endTime ? new Date(endTime) : null,
       recurrenceRule,
@@ -85,7 +92,9 @@ export class SchedulingService implements OnModuleInit {
     const query = this.scheduleRepository
       .createQueryBuilder('schedule')
       .leftJoinAndSelect('schedule.display', 'display')
+      .leftJoinAndSelect('schedule.displayGroup', 'displayGroup')
       .leftJoinAndSelect('schedule.content', 'content')
+      .leftJoinAndSelect('schedule.playlist', 'playlist')
       .orderBy('schedule.startTime', 'ASC')
       .addOrderBy('schedule.priority', 'DESC');
 
@@ -98,43 +107,57 @@ export class SchedulingService implements OnModuleInit {
 
   /**
    * Find active schedules for a display
+   * This includes both:
+   * 1. Schedules directly assigned to the display
+   * 2. Schedules assigned to groups the display belongs to
    */
   async findActiveForDisplay(displayId: string): Promise<Schedule[]> {
     const now = new Date();
 
-    return this.scheduleRepository.find({
-      where: {
-        displayId,
-        isActive: true,
-        startTime: LessThanOrEqual(now),
-      },
-      relations: ['display', 'content'],
-      order: {
-        priority: 'DESC',
-        startTime: 'ASC',
-      },
-    });
+    const query = this.scheduleRepository
+      .createQueryBuilder('schedule')
+      .leftJoinAndSelect('schedule.display', 'display')
+      .leftJoinAndSelect('schedule.displayGroup', 'displayGroup')
+      .leftJoinAndSelect('displayGroup.displays', 'groupDisplays')
+      .leftJoinAndSelect('schedule.content', 'content')
+      .leftJoinAndSelect('schedule.playlist', 'playlist')
+      .where('schedule.isActive = :isActive', { isActive: true })
+      .andWhere('schedule.startTime <= :now', { now })
+      .andWhere(
+        '(schedule.displayId = :displayId OR groupDisplays.id = :displayId)',
+        { displayId }
+      )
+      .orderBy('schedule.priority', 'DESC')
+      .addOrderBy('schedule.startTime', 'ASC');
+
+    return query.getMany();
   }
 
   /**
    * Find current active content for a display
+   * This includes both direct schedules and group schedules
    */
   async getCurrentContent(displayId: string): Promise<Schedule | null> {
     const now = new Date();
 
-    // Find schedules that are currently active
-    const schedules = await this.scheduleRepository.find({
-      where: {
-        displayId,
-        isActive: true,
-        startTime: LessThanOrEqual(now),
-      },
-      relations: ['display', 'content'],
-      order: {
-        priority: 'DESC',
-        startTime: 'DESC',
-      },
-    });
+    // Find schedules that are currently active (direct or via group)
+    const query = this.scheduleRepository
+      .createQueryBuilder('schedule')
+      .leftJoinAndSelect('schedule.display', 'display')
+      .leftJoinAndSelect('schedule.displayGroup', 'displayGroup')
+      .leftJoinAndSelect('displayGroup.displays', 'groupDisplays')
+      .leftJoinAndSelect('schedule.content', 'content')
+      .leftJoinAndSelect('schedule.playlist', 'playlist')
+      .where('schedule.isActive = :isActive', { isActive: true })
+      .andWhere('schedule.startTime <= :now', { now })
+      .andWhere(
+        '(schedule.displayId = :displayId OR groupDisplays.id = :displayId)',
+        { displayId }
+      )
+      .orderBy('schedule.priority', 'DESC')
+      .addOrderBy('schedule.startTime', 'DESC');
+
+    const schedules = await query.getMany();
 
     // Filter by endTime if specified
     const activeSchedules = schedules.filter(schedule => {
@@ -152,7 +175,7 @@ export class SchedulingService implements OnModuleInit {
   async findById(id: string): Promise<Schedule> {
     const schedule = await this.scheduleRepository.findOne({
       where: { id },
-      relations: ['display', 'content'],
+      relations: ['display', 'displayGroup', 'content', 'playlist'],
     });
 
     if (!schedule) {

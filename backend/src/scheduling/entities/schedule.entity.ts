@@ -10,6 +10,7 @@ import {
 import { Display } from '../../displays/entities/display.entity';
 import { Content } from '../../content/entities/content.entity';
 import { Playlist } from '../../playlists/entities/playlist.entity';
+import { DisplayGroup } from '../../display-groups/entities/display-group.entity';
 
 @Entity('schedules')
 @Index(['displayId', 'startTime', 'endTime'])
@@ -18,12 +19,19 @@ export class Schedule {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => Display, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Display, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'display_id' })
   display: Display;
 
-  @Column({ name: 'display_id' })
+  @Column({ name: 'display_id', nullable: true })
   displayId: string;
+
+  @ManyToOne(() => DisplayGroup, { onDelete: 'CASCADE', nullable: true })
+  @JoinColumn({ name: 'display_group_id' })
+  displayGroup: DisplayGroup;
+
+  @Column({ name: 'display_group_id', nullable: true })
+  displayGroupId: string;
 
   @ManyToOne(() => Content, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'content_id' })

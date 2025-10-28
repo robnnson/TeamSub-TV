@@ -12,21 +12,35 @@ import {
 } from 'class-validator';
 
 export class CreateScheduleDto {
+  // Target either a single display or a display group
   @IsUUID()
-  displayId: string;
+  @ValidateIf((o) => !o.displayGroupId)
+  @IsOptional()
+  displayId?: string;
 
-  // Single content (legacy) - required if contentIds not provided
   @IsUUID()
-  @ValidateIf((o) => !o.contentIds || o.contentIds.length === 0)
+  @ValidateIf((o) => !o.displayId)
+  @IsOptional()
+  displayGroupId?: string;
+
+  // Single content - required if contentIds and playlistId not provided
+  @IsUUID()
+  @ValidateIf((o) => !o.contentIds && !o.playlistId)
   @IsOptional()
   contentId?: string;
 
-  // Playlist - array of content IDs (new feature)
+  // Simple playlist - array of content IDs
   @IsArray()
   @IsUUID('4', { each: true })
-  @ValidateIf((o) => !o.contentId)
+  @ValidateIf((o) => !o.contentId && !o.playlistId)
   @IsOptional()
   contentIds?: string[];
+
+  // Advanced playlist - reference to Playlist entity
+  @IsUUID()
+  @ValidateIf((o) => !o.contentId && !o.contentIds)
+  @IsOptional()
+  playlistId?: string;
 
   @IsDateString()
   startTime: string;

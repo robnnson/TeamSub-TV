@@ -4,7 +4,9 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToMany,
 } from 'typeorm';
+import { DisplayGroup } from '../../display-groups/entities/display-group.entity';
 
 export enum DisplayStatus {
   ONLINE = 'online',
@@ -43,6 +45,9 @@ export class Display {
     default: DisplayStatus.OFFLINE,
   })
   status: DisplayStatus;
+
+  @ManyToMany(() => DisplayGroup, (group) => group.displays)
+  groups: DisplayGroup[];
 
   @CreateDateColumn()
   createdAt: Date;
