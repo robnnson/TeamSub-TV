@@ -1,3 +1,5 @@
+import logoImage from '../assets/logo.png';
+
 interface ErrorScreenProps {
   displayName?: string;
   displayLocation?: string;
@@ -26,7 +28,7 @@ export default function ErrorScreen({ displayName, displayLocation, error }: Err
         }}
       >
         <img
-          src="/img/logo.png"
+          src={logoImage}
           alt="Team Sub TV"
           style={{
             maxWidth: '400px',
