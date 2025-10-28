@@ -193,10 +193,8 @@ export default function App() {
         });
 
         eventSource.addEventListener('content.changed', () => {
-          console.log('Content changed event received - reloading schedules and refreshing content');
-          loadSchedules(false);
-          // Force refresh current content immediately
-          getCurrentContent();
+          console.log('Content changed event received - forcing full page reload');
+          window.location.reload();
         });
 
         eventSource.addEventListener('schedule.triggered', () => {
@@ -205,10 +203,8 @@ export default function App() {
         });
 
         eventSource.addEventListener('content.update', () => {
-          console.log('Content update event received - reloading schedules and refreshing content');
-          loadSchedules(false);
-          // Force refresh current content immediately
-          getCurrentContent();
+          console.log('Content update event received - forcing full page reload');
+          window.location.reload();
         });
 
         eventSource.addEventListener('heartbeat', () => {
