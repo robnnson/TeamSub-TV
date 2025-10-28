@@ -120,7 +120,8 @@ export default function App() {
 
           if (playlistChanged) {
             // New playlist - start from beginning
-            console.log('Loading new playlist with', contentIds.length, 'items, loop:', topSchedule.playlist.loop);
+            console.log('[PLAYLIST] Loading new playlist with', contentIds.length, 'items, loop:', topSchedule.playlist.loop);
+            console.log('[PLAYLIST] Playlist name:', topSchedule.playlist.name);
             setCurrentPlaylist(contentIds);
             setCurrentPlaylistIndex(0);
             setPlaylistShouldLoop(topSchedule.playlist.loop);
@@ -129,7 +130,7 @@ export default function App() {
           } else {
             // Same playlist - load current index item
             const index = currentPlaylistIndex % contentIds.length;
-            console.log('Loading playlist item', index + 1, 'of', contentIds.length);
+            console.log('[PLAYLIST] Loading playlist item', index + 1, 'of', contentIds.length);
             const content = await apiClient.current.getContent(contentIds[index]);
             setCurrentContent(content);
           }
@@ -139,7 +140,7 @@ export default function App() {
 
           if (playlistChanged) {
             // New playlist - start from beginning
-            console.log('Loading new playlist with', topSchedule.contentIds.length, 'items (simple mode, always loops)');
+            console.log('[PLAYLIST] Loading new playlist with', topSchedule.contentIds.length, 'items (simple mode, always loops)');
             setCurrentPlaylist(topSchedule.contentIds);
             setCurrentPlaylistIndex(0);
             setPlaylistShouldLoop(true);
@@ -148,7 +149,7 @@ export default function App() {
           } else {
             // Same playlist - load current index item
             const index = currentPlaylistIndex % topSchedule.contentIds.length;
-            console.log('Loading playlist item', index + 1, 'of', topSchedule.contentIds.length);
+            console.log('[PLAYLIST] Loading playlist item', index + 1, 'of', topSchedule.contentIds.length);
             const content = await apiClient.current.getContent(topSchedule.contentIds[index]);
             setCurrentContent(content);
           }
@@ -278,13 +279,17 @@ export default function App() {
 
   // Handle content completion
   const handleContentComplete = useCallback(() => {
-    if (currentPlaylist && currentPlaylist.length > 1) {
+    console.log('[PLAYLIST DEBUG] Content complete. Playlist:', currentPlaylist ? currentPlaylist.length + ' items' : 'none',
+                'Index:', currentPlaylistIndex, 'Should loop:', playlistShouldLoop);
+
+    if (currentPlaylist && currentPlaylist.length >= 1) {
       const isLastItem = currentPlaylistIndex === currentPlaylist.length - 1;
+      console.log('[PLAYLIST DEBUG] Is last item:', isLastItem);
 
       // Check if we should advance to next item
       if (isLastItem && !playlistShouldLoop) {
-        // Last item and no loop - stay on last item or stop
-        console.log('Playlist completed (no loop). Refreshing to check for schedule changes...');
+        // Last item and no loop - refresh to check for schedule changes
+        console.log('[PLAYLIST] Playlist completed (no loop). Refreshing to check for schedule changes...');
         getCurrentContent();
       } else {
         // Move to next item in playlist (with loop)
@@ -292,7 +297,7 @@ export default function App() {
           ? (currentPlaylistIndex + 1) % currentPlaylist.length
           : Math.min(currentPlaylistIndex + 1, currentPlaylist.length - 1);
 
-        console.log('Advancing to next playlist item:', nextIndex + 1, 'of', currentPlaylist.length, 'loop:', playlistShouldLoop);
+        console.log('[PLAYLIST] Advancing to next playlist item:', nextIndex + 1, 'of', currentPlaylist.length, 'loop:', playlistShouldLoop);
         setCurrentPlaylistIndex(nextIndex);
 
         // Load next content
@@ -309,8 +314,8 @@ export default function App() {
         }
       }
     } else {
-      // Single content or end of playlist - refresh to check for schedule changes
-      console.log('Content complete, refreshing...');
+      // Single content (not a playlist) - refresh to check for schedule changes
+      console.log('Single content complete, refreshing...');
       getCurrentContent();
     }
   }, [currentPlaylist, currentPlaylistIndex, playlistShouldLoop, getCurrentContent]);
