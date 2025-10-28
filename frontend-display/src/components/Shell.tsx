@@ -4,9 +4,10 @@ interface ShellProps {
   children: ReactNode;
   displayName?: string;
   displayLocation?: string;
+  eventSource?: EventSource | null;
 }
 
-export default function Shell({ children, displayName, displayLocation }: ShellProps) {
+export default function Shell({ children, displayName, displayLocation, eventSource }: ShellProps) {
   const [clockTime, setClockTime] = useState('');
   const [clockDate, setClockDate] = useState('');
   const [currentBanner, setCurrentBanner] = useState(0);
@@ -177,12 +178,11 @@ export default function Shell({ children, displayName, displayLocation }: ShellP
       }
     };
 
+    // Fetch once on mount, then rely on SSE for updates
     fetchFpconStatus();
-    const interval = setInterval(fetchFpconStatus, 60000);
-    return () => clearInterval(interval);
   }, []);
 
-  // Fetch LAN status from backend
+  // Fetch LAN status from backend (initial load only, updates via SSE)
   useEffect(() => {
     const fetchLANStatus = async () => {
       try {
@@ -206,10 +206,48 @@ export default function Shell({ children, displayName, displayLocation }: ShellP
       }
     };
 
+    // Fetch once on mount, then rely on SSE for updates
     fetchLANStatus();
-    const interval = setInterval(fetchLANStatus, 5000);
-    return () => clearInterval(interval);
   }, []);
+
+  // Listen for FPCON/LAN status changes via SSE
+  useEffect(() => {
+    if (!eventSource) return;
+
+    const handleFpconChange = (e: MessageEvent) => {
+      const data = JSON.parse(e.data);
+      const status = data.status?.toUpperCase() || 'UNKNOWN';
+      const colorMap: Record<string, string> = {
+        NORMAL: '#4caf50',
+        ALPHA: '#03a9f4',
+        BRAVO: '#ffc107',
+        CHARLIE: '#ff5722',
+        DELTA: '#f44336',
+      };
+      setFpconStatus({ status, color: colorMap[status] || '#666' });
+      console.log('FPCON status updated via SSE:', status);
+    };
+
+    const handleLanChange = (e: MessageEvent) => {
+      const data = JSON.parse(e.data);
+      const status = data.status?.toUpperCase() || 'UNKNOWN';
+      const colorMap: Record<string, string> = {
+        NORMAL: '#4caf50',
+        DEGRADED: '#ffc107',
+        OUTAGE: '#f44336',
+      };
+      setLanStatus({ status, color: colorMap[status] || '#666' });
+      console.log('LAN status updated via SSE:', status);
+    };
+
+    eventSource.addEventListener('fpcon.changed', handleFpconChange);
+    eventSource.addEventListener('lan.changed', handleLanChange);
+
+    return () => {
+      eventSource.removeEventListener('fpcon.changed', handleFpconChange);
+      eventSource.removeEventListener('lan.changed', handleLanChange);
+    };
+  }, [eventSource]);
 
   return (
     <div style={{

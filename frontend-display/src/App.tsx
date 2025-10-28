@@ -53,7 +53,7 @@ export default function App() {
   }, [handleConfigured]);
 
   // Load schedules
-  const loadSchedules = useCallback(async () => {
+  const loadSchedules = useCallback(async (isInitialLoad = false) => {
     if (!apiClient.current || !display) return;
 
     try {
@@ -62,9 +62,15 @@ export default function App() {
       setError('');
     } catch (err: any) {
       console.error('Failed to load schedules:', err);
-      setError('Failed to load schedules');
+      // Only set error on initial load to avoid disrupting playback
+      if (isInitialLoad) {
+        setError('Failed to load schedules');
+      }
     } finally {
-      setLoading(false);
+      // Only clear loading state on initial load
+      if (isInitialLoad) {
+        setLoading(false);
+      }
     }
   }, [display]);
 
@@ -132,17 +138,17 @@ export default function App() {
 
         eventSource.addEventListener('content.changed', () => {
           console.log('Content changed event received');
-          loadSchedules();
+          loadSchedules(false);
         });
 
         eventSource.addEventListener('schedule.triggered', () => {
           console.log('Schedule triggered event received');
-          loadSchedules();
+          loadSchedules(false);
         });
 
         eventSource.addEventListener('content.update', () => {
           console.log('Content update event received');
-          loadSchedules();
+          loadSchedules(false);
         });
 
         eventSource.addEventListener('heartbeat', () => {
@@ -176,8 +182,11 @@ export default function App() {
   useEffect(() => {
     if (!configured || !display) return;
 
-    loadSchedules();
-    const interval = setInterval(loadSchedules, SCHEDULE_REFRESH_INTERVAL);
+    // Initial load
+    loadSchedules(true);
+
+    // Periodic refresh (don't show loading state)
+    const interval = setInterval(() => loadSchedules(false), SCHEDULE_REFRESH_INTERVAL);
 
     return () => clearInterval(interval);
   }, [configured, display, loadSchedules]);
@@ -236,7 +245,7 @@ export default function App() {
           <div className="text-red-500 text-3xl mb-4">Error</div>
           <div className="text-white text-xl">{error}</div>
           <button
-            onClick={loadSchedules}
+            onClick={() => loadSchedules(true)}
             className="mt-4 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           >
             Retry
@@ -248,7 +257,11 @@ export default function App() {
 
   // Always show Shell, with content inside or welcome message
   return (
-    <Shell displayName={display?.name} displayLocation={display?.location}>
+    <Shell
+      displayName={display?.name}
+      displayLocation={display?.location}
+      eventSource={eventSourceRef.current}
+    >
       {currentContent ? (
         <ContentRenderer
           content={currentContent}
