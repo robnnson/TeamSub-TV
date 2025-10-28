@@ -246,7 +246,8 @@ class ApiClient {
 
   async createSchedule(scheduleData: {
     displayId: string;
-    contentId: string;
+    contentId?: string;
+    contentIds?: string[];
     startTime: string;
     endTime?: string;
     recurrenceRule?: string;

@@ -99,6 +99,13 @@ export class SettingsController {
     return { status: dto.status, message: 'LAN status updated successfully' };
   }
 
+  @Public()
+  @Get('ticker_messages')
+  async getTickerMessages() {
+    // Public endpoint - no authentication required for displays
+    return this.settingsService.findByKey('ticker_messages');
+  }
+
   @Get('apikeys/:service')
   @Roles(UserRole.ADMIN)
   async getApiKey(@Param('service') service: string) {

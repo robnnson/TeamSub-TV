@@ -35,7 +35,10 @@ export default function ContentRenderer({ content, apiUrl, onComplete }: Content
     }
 
     return () => {
-      if (timer) window.clearTimeout(timer);
+      if (timer) {
+        window.clearTimeout(timer);
+        window.clearInterval(timer);
+      }
     };
   }, [content, onComplete]);
 

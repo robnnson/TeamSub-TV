@@ -334,8 +334,8 @@ export default function Shell({ children, displayName, displayLocation, eventSou
           zIndex: 10,
           textAlign: 'center',
         }}>
-          <div style={{ fontSize: '2.5em', fontWeight: 'bold', fontFamily: "'Courier New', monospace" }}>{clockTime}</div>
-          <div style={{ fontSize: '1.2em', fontWeight: 'normal', marginTop: '5px', opacity: 0.9 }}>{clockDate}</div>
+          <div style={{ fontSize: '4.5em', fontWeight: 'bold', fontFamily: "'Courier New', monospace" }}>{clockTime}</div>
+          <div style={{ fontSize: '2.2em', fontWeight: 'normal', marginTop: '5px', opacity: 0.9 }}>{clockDate}</div>
         </div>
       </div>
 
@@ -393,13 +393,13 @@ export default function Shell({ children, displayName, displayLocation, eventSou
             }}>
               {/* Display name/location as first message if available */}
               {displayName && displayLocation && (
-                <span style={{ fontSize: '1.3em', marginRight: '50px' }}>
+                <span style={{ fontSize: '2.2em', marginRight: '50px' }}>
                   ● {displayName} - {displayLocation}
                 </span>
               )}
               {/* Dynamic ticker messages from backend */}
               {tickerMessages.map((message, index) => (
-                <span key={index} style={{ fontSize: '1.3em', marginRight: '50px' }}>
+                <span key={index} style={{ fontSize: '2.2em', marginRight: '50px' }}>
                   ● {message}
                 </span>
               ))}
@@ -414,15 +414,15 @@ export default function Shell({ children, displayName, displayLocation, eventSou
           padding: '20px',
           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
         }}>
-          <h2 style={{ color: '#333', fontSize: '1.8em', marginBottom: '15px', borderBottom: '3px solid #667eea', paddingBottom: '10px' }}>
+          <h2 style={{ color: '#333', fontSize: '2.8em', marginBottom: '15px', borderBottom: '3px solid #667eea', paddingBottom: '10px' }}>
             Current Weather
           </h2>
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginTop: '10px' }}>
-            {weather.icon && <img src={weather.icon} alt="Weather" style={{ width: '80px', height: '80px' }} />}
+            {weather.icon && <img src={weather.icon} alt="Weather" style={{ width: '120px', height: '120px' }} />}
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: '3em', color: '#667eea', fontWeight: 'bold' }}>{weather.temp}</div>
-              <div style={{ fontSize: '1.3em', color: '#666' }}>{weather.desc}</div>
-              <div style={{ marginTop: '10px', color: '#888' }}>
+              <div style={{ fontSize: '4.5em', color: '#667eea', fontWeight: 'bold' }}>{weather.temp}</div>
+              <div style={{ fontSize: '2em', color: '#666' }}>{weather.desc}</div>
+              <div style={{ marginTop: '10px', color: '#888', fontSize: '1.5em' }}>
                 <span>Humidity: {weather.humidity}</span><br />
                 <span>Wind: {weather.wind}</span>
               </div>
@@ -450,11 +450,11 @@ export default function Shell({ children, displayName, displayLocation, eventSou
             transition: 'opacity 1s ease-in-out',
             overflow: 'hidden',
           }}>
-            <h2 style={{ color: '#333', fontSize: '1.8em', marginBottom: '15px', borderBottom: '3px solid #667eea', paddingBottom: '10px' }}>
+            <h2 style={{ color: '#333', fontSize: '2.8em', marginBottom: '15px', borderBottom: '3px solid #667eea', paddingBottom: '10px' }}>
               Next Trains - Navy Yard
             </h2>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.95em', color: '#888', marginBottom: '10px' }}>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" style={{ width: '18px', height: '18px', fill: '#888' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.5em', color: '#888', marginBottom: '10px' }}>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" style={{ width: '28px', height: '28px', fill: '#888' }}>
                 <path d="M13.5 5.5C14.33 5.5 15 4.83 15 4C15 3.17 14.33 2.5 13.5 2.5C12.67 2.5 12 3.17 12 4C12 4.83 12.67 5.5 13.5 5.5ZM9 22V15.5L7 13V8.5H8.5V12L11 14.5V22H9ZM16.75 22L15 14H17L18.75 22H16.75ZM18.5 10C17.67 10 17 10.67 17 11.5C17 12.33 17.67 13 18.5 13C19.33 13 20 12.33 20 11.5C20 10.67 19.33 10 18.5 10Z"/>
               </svg>
               <span>14 min walk</span>
@@ -469,13 +469,13 @@ export default function Shell({ children, displayName, displayLocation, eventSou
                   margin: '8px 0',
                   background: 'linear-gradient(to right, #e8f5e9, #c8e6c9)',
                   borderRadius: '8px',
-                  fontSize: '1.1em',
+                  fontSize: '1.6em',
                 }}>
-                  <span style={{ fontWeight: 'bold', color: '#1b5e20', minWidth: '60px' }}>{train.Line}</span>
+                  <span style={{ fontWeight: 'bold', color: '#1b5e20', minWidth: '90px' }}>{train.Line}</span>
                   <span style={{ flex: 1, color: '#333', margin: '0 10px' }}>to {train.Destination}</span>
-                  <span style={{ color: '#667eea', fontWeight: 'bold', minWidth: '60px', textAlign: 'right' }}>{train.Min} min</span>
+                  <span style={{ color: '#667eea', fontWeight: 'bold', minWidth: '90px', textAlign: 'right' }}>{train.Min} min</span>
                 </div>
-              )) : <div style={{ padding: '12px', color: '#666' }}>No upcoming trains.</div>}
+              )) : <div style={{ padding: '12px', color: '#666', fontSize: '1.5em' }}>No upcoming trains.</div>}
             </div>
           </div>
 
@@ -490,22 +490,22 @@ export default function Shell({ children, displayName, displayLocation, eventSou
             transition: 'opacity 1s ease-in-out',
             overflow: 'hidden',
           }}>
-            <h2 style={{ color: '#333', fontSize: '1.8em', marginBottom: '15px', borderBottom: '3px solid #667eea', paddingBottom: '10px' }}>
+            <h2 style={{ color: '#333', fontSize: '2.8em', marginBottom: '15px', borderBottom: '3px solid #667eea', paddingBottom: '10px' }}>
               Status Information
             </h2>
             <div style={{ background: 'rgba(255, 255, 255, 0.5)', border: '2px solid #ddd', padding: '15px', borderRadius: '8px', marginBottom: '15px' }}>
-              <h3 style={{ fontSize: '0.9em', color: '#666', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+              <h3 style={{ fontSize: '1.5em', color: '#666', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>
                 Force Protection Condition
               </h3>
-              <div style={{ fontSize: '2.2em', fontWeight: 600, letterSpacing: '1px', color: fpconStatus.color }}>
+              <div style={{ fontSize: '3.5em', fontWeight: 600, letterSpacing: '1px', color: fpconStatus.color }}>
                 {fpconStatus.status}
               </div>
             </div>
             <div style={{ background: 'rgba(255, 255, 255, 0.5)', border: '2px solid #ddd', padding: '15px', borderRadius: '8px' }}>
-              <h3 style={{ fontSize: '0.9em', color: '#666', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+              <h3 style={{ fontSize: '1.5em', color: '#666', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>
                 Network Status
               </h3>
-              <div style={{ fontSize: '2.2em', fontWeight: 600, letterSpacing: '1px', color: lanStatus.color }}>
+              <div style={{ fontSize: '3.5em', fontWeight: 600, letterSpacing: '1px', color: lanStatus.color }}>
                 {lanStatus.status}
               </div>
             </div>
@@ -522,7 +522,7 @@ export default function Shell({ children, displayName, displayLocation, eventSou
             transition: 'opacity 1s ease-in-out',
             overflow: 'hidden',
           }}>
-            <h2 style={{ color: '#333', fontSize: '1.8em', marginBottom: '15px', borderBottom: '3px solid #667eea', paddingBottom: '10px' }}>
+            <h2 style={{ color: '#333', fontSize: '2.8em', marginBottom: '15px', borderBottom: '3px solid #667eea', paddingBottom: '10px' }}>
               Driving Times
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', maxHeight: 'calc(100% - 60px)' }}>
@@ -536,12 +536,12 @@ export default function Shell({ children, displayName, displayLocation, eventSou
                   gap: '5px',
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '1.1em', fontWeight: 'bold', color: '#333' }}>{drive.name}</span>
-                    <span style={{ fontSize: '1.1em', color: '#667eea', fontWeight: 'bold' }}>{drive.minutes} min</span>
+                    <span style={{ fontSize: '1.6em', fontWeight: 'bold', color: '#333' }}>{drive.name}</span>
+                    <span style={{ fontSize: '1.6em', color: '#667eea', fontWeight: 'bold' }}>{drive.minutes} min</span>
                   </div>
-                  <div style={{ fontSize: '0.9em', color: '#666' }}>Arrives approx. at {drive.arrival}</div>
+                  <div style={{ fontSize: '1.3em', color: '#666' }}>Arrives approx. at {drive.arrival}</div>
                 </div>
-              )) : <div style={{ padding: '12px', color: '#666' }}>Loading driving times...</div>}
+              )) : <div style={{ padding: '12px', color: '#666', fontSize: '1.5em' }}>Loading driving times...</div>}
             </div>
           </div>
         </div>

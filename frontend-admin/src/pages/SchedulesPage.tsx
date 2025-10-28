@@ -139,9 +139,22 @@ export default function SchedulesPage() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
                         <FileText className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm text-gray-900">
-                          {schedule.content?.title || 'Unknown'}
-                        </span>
+                        <div>
+                          {schedule.contentIds && schedule.contentIds.length > 0 ? (
+                            <>
+                              <div className="text-sm font-medium text-gray-900">
+                                Playlist ({schedule.contentIds.length} items)
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                Multiple content items
+                              </div>
+                            </>
+                          ) : (
+                            <span className="text-sm text-gray-900">
+                              {schedule.content?.title || 'Unknown'}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -219,6 +232,8 @@ function CreateScheduleModal({ onClose, onSuccess }: { onClose: () => void; onSu
   const [content, setContent] = useState<Content[]>([]);
   const [displayId, setDisplayId] = useState('');
   const [contentId, setContentId] = useState('');
+  const [contentIds, setContentIds] = useState<string[]>([]);
+  const [isPlaylist, setIsPlaylist] = useState(false);
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [recurrenceRule, setRecurrenceRule] = useState('');
@@ -253,13 +268,25 @@ function CreateScheduleModal({ onClose, onSuccess }: { onClose: () => void; onSu
       return;
     }
 
+    // Validate: either single content or playlist must be selected
+    if (isPlaylist && contentIds.length === 0) {
+      setError('Please select at least one content item for the playlist');
+      return;
+    }
+
+    if (!isPlaylist && !contentId) {
+      setError('Please select content');
+      return;
+    }
+
     try {
       setCreating(true);
       setError('');
 
       await api.createSchedule({
         displayId,
-        contentId,
+        contentId: isPlaylist ? undefined : contentId,
+        contentIds: isPlaylist ? contentIds : undefined,
         startTime: new Date(startTime).toISOString(),
         endTime: endTime ? new Date(endTime).toISOString() : undefined,
         recurrenceRule: recurrenceRule || undefined,
@@ -314,21 +341,80 @@ function CreateScheduleModal({ onClose, onSuccess }: { onClose: () => void; onSu
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Content *
+                  Content Type *
                 </label>
-                <select
-                  value={contentId}
-                  onChange={(e) => setContentId(e.target.value)}
-                  className="input w-full"
-                  required
-                >
-                  <option value="">Select content</option>
-                  {content.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.title} ({item.type})
-                    </option>
-                  ))}
-                </select>
+                <div className="flex items-center gap-4 mb-2">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      checked={!isPlaylist}
+                      onChange={() => {
+                        setIsPlaylist(false);
+                        setContentIds([]);
+                      }}
+                      className="w-4 h-4 text-primary-600"
+                    />
+                    <span className="text-sm text-gray-700">Single Content</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      checked={isPlaylist}
+                      onChange={() => {
+                        setIsPlaylist(true);
+                        setContentId('');
+                      }}
+                      className="w-4 h-4 text-primary-600"
+                    />
+                    <span className="text-sm text-gray-700">Playlist (Multiple)</span>
+                  </label>
+                </div>
+
+                {!isPlaylist ? (
+                  <select
+                    value={contentId}
+                    onChange={(e) => setContentId(e.target.value)}
+                    className="input w-full"
+                    required
+                  >
+                    <option value="">Select content</option>
+                    {content.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.title} ({item.type})
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="border border-gray-300 rounded-md max-h-48 overflow-y-auto">
+                    {content.map((item) => (
+                      <label
+                        key={item.id}
+                        className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer border-b last:border-b-0"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={contentIds.includes(item.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setContentIds([...contentIds, item.id]);
+                            } else {
+                              setContentIds(contentIds.filter(id => id !== item.id));
+                            }
+                          }}
+                          className="w-4 h-4 text-primary-600 rounded"
+                        />
+                        <span className="text-sm text-gray-700">
+                          {item.title} ({item.type})
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+                {isPlaylist && contentIds.length > 0 && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    {contentIds.length} item{contentIds.length !== 1 ? 's' : ''} selected
+                  </p>
+                )}
               </div>
             </div>
 

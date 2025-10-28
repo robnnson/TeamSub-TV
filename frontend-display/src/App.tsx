@@ -2,12 +2,13 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import DisplayApiClient from './api';
 import PairingCodeScreen from './components/PairingCodeScreen';
 import ContentRenderer from './components/ContentRenderer';
+import ErrorScreen from './components/ErrorScreen';
 import Shell from './components/Shell';
 import type { Content, Schedule, Display } from './types';
 
 const API_URL = '/api';
 const HEARTBEAT_INTERVAL = 30000; // 30 seconds
-const SCHEDULE_REFRESH_INTERVAL = 60000; // 1 minute
+const SCHEDULE_REFRESH_INTERVAL = 15000; // 15 seconds - faster updates for better real-time feel
 
 export default function App() {
   const [configured, setConfigured] = useState(false);
@@ -240,18 +241,12 @@ export default function App() {
 
   if (error) {
     return (
-      <div className="fullscreen-content">
-        <div className="text-center">
-          <div className="text-red-500 text-3xl mb-4">Error</div>
-          <div className="text-white text-xl">{error}</div>
-          <button
-            onClick={() => loadSchedules(true)}
-            className="mt-4 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
+      <ErrorScreen
+        displayName={display?.name}
+        displayLocation={display?.location}
+        error={error}
+        onRetry={() => loadSchedules(true)}
+      />
     );
   }
 

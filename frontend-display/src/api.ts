@@ -13,8 +13,8 @@ class DisplayApiClient {
     });
   }
 
-  setApiKey(apiKey: string) {
-    this.client.defaults.headers['X-API-Key'] = apiKey;
+  setApiKey(newApiKey: string) {
+    this.client.defaults.headers['X-API-Key'] = newApiKey;
   }
 
   // Get current display info (using API key)

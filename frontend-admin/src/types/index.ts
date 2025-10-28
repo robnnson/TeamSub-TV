@@ -57,7 +57,8 @@ export interface Display {
 export interface Schedule {
   id: string;
   displayId: string;
-  contentId: string;
+  contentId: string | null;
+  contentIds: string[] | null;
   startTime: string;
   endTime: string | null;
   recurrenceRule: string | null;
