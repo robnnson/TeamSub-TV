@@ -24,12 +24,16 @@ export class Schedule {
   @Column({ name: 'display_id' })
   displayId: string;
 
-  @ManyToOne(() => Content, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Content, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'content_id' })
   content: Content;
 
-  @Column({ name: 'content_id' })
+  @Column({ name: 'content_id', nullable: true })
   contentId: string;
+
+  // Playlist support - array of content IDs
+  @Column({ type: 'json', nullable: true })
+  contentIds: string[];
 
   @Column({ type: 'timestamp' })
   startTime: Date;

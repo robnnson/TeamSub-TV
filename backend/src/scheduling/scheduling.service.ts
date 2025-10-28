@@ -33,7 +33,12 @@ export class SchedulingService implements OnModuleInit {
    * Create a new schedule
    */
   async create(createScheduleDto: CreateScheduleDto): Promise<Schedule> {
-    const { displayId, contentId, startTime, endTime, recurrenceRule, priority, isActive } = createScheduleDto;
+    const { displayId, contentId, contentIds, startTime, endTime, recurrenceRule, priority, isActive } = createScheduleDto;
+
+    // Validate that either contentId or contentIds is provided
+    if (!contentId && (!contentIds || contentIds.length === 0)) {
+      throw new BadRequestException('Either contentId or contentIds must be provided');
+    }
 
     // Validate date range
     if (endTime && new Date(startTime) >= new Date(endTime)) {
@@ -51,7 +56,8 @@ export class SchedulingService implements OnModuleInit {
 
     const schedule = this.scheduleRepository.create({
       displayId,
-      contentId,
+      contentId: contentId || null,
+      contentIds: contentIds || null,
       startTime: new Date(startTime),
       endTime: endTime ? new Date(endTime) : null,
       recurrenceRule,

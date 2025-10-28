@@ -8,6 +8,7 @@ import ContentPage from './pages/ContentPage';
 import DisplaysPage from './pages/DisplaysPage';
 import SchedulesPage from './pages/SchedulesPage';
 import SettingsPage from './pages/SettingsPage';
+import TickerSettingsPage from './pages/TickerSettingsPage';
 import UsersPage from './pages/UsersPage';
 
 const queryClient = new QueryClient({
@@ -50,6 +51,7 @@ function App() {
             <Route path="schedules" element={<SchedulesPage />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="settings" element={<SettingsPage />} />
+            <Route path="ticker" element={<TickerSettingsPage />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

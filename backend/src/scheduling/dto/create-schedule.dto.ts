@@ -7,14 +7,26 @@ import {
   Min,
   Max,
   IsBoolean,
+  IsArray,
+  ValidateIf,
 } from 'class-validator';
 
 export class CreateScheduleDto {
   @IsUUID()
   displayId: string;
 
+  // Single content (legacy) - required if contentIds not provided
   @IsUUID()
-  contentId: string;
+  @ValidateIf((o) => !o.contentIds || o.contentIds.length === 0)
+  @IsOptional()
+  contentId?: string;
+
+  // Playlist - array of content IDs (new feature)
+  @IsArray()
+  @IsUUID('4', { each: true })
+  @ValidateIf((o) => !o.contentId)
+  @IsOptional()
+  contentIds?: string[];
 
   @IsDateString()
   startTime: string;

@@ -17,6 +17,10 @@ export default function Shell({ children, displayName, displayLocation, eventSou
   const [driveTimes, setDriveTimes] = useState<any[]>([]);
   const [fpconStatus, setFpconStatus] = useState({ status: 'LOADING...', color: '#666' });
   const [lanStatus, setLanStatus] = useState({ status: 'LOADING...', color: '#666' });
+  const [tickerMessages, setTickerMessages] = useState<string[]>([
+    'Welcome to Team-Sub Navigator',
+    'Metro Arrivals Updated Every 30s',
+  ]);
 
   const banners = [
     '/img/Team-Sub Navigator Banner_JAN-FEB-MAR.jpg',
@@ -210,7 +214,31 @@ export default function Shell({ children, displayName, displayLocation, eventSou
     fetchLANStatus();
   }, []);
 
-  // Listen for FPCON/LAN status changes via SSE
+  // Fetch ticker messages from backend (initial load only, updates via SSE)
+  useEffect(() => {
+    const fetchTickerMessages = async () => {
+      try {
+        const apiKey = localStorage.getItem('display_api_key');
+        const headers: Record<string, string> = {};
+        if (apiKey) {
+          headers['x-api-key'] = apiKey;
+        }
+
+        const res = await fetch('/api/settings/ticker_messages', { headers });
+        const data = await res.json();
+        const messages = JSON.parse(data.value);
+        setTickerMessages(messages);
+      } catch (err) {
+        console.error('Failed to load ticker messages:', err);
+        // Keep default messages on error
+      }
+    };
+
+    // Fetch once on mount, then rely on SSE for updates
+    fetchTickerMessages();
+  }, []);
+
+  // Listen for FPCON/LAN/Ticker status changes via SSE
   useEffect(() => {
     if (!eventSource) return;
 
@@ -240,12 +268,28 @@ export default function Shell({ children, displayName, displayLocation, eventSou
       console.log('LAN status updated via SSE:', status);
     };
 
+    const handleSettingsChange = (e: MessageEvent) => {
+      const data = JSON.parse(e.data);
+      // Check if ticker_messages setting was updated
+      if (data.key === 'ticker_messages') {
+        try {
+          const messages = JSON.parse(data.value);
+          setTickerMessages(messages);
+          console.log('Ticker messages updated via SSE:', messages);
+        } catch (err) {
+          console.error('Failed to parse ticker messages:', err);
+        }
+      }
+    };
+
     eventSource.addEventListener('fpcon.changed', handleFpconChange);
     eventSource.addEventListener('lan.changed', handleLanChange);
+    eventSource.addEventListener('settings.changed', handleSettingsChange);
 
     return () => {
       eventSource.removeEventListener('fpcon.changed', handleFpconChange);
       eventSource.removeEventListener('lan.changed', handleLanChange);
+      eventSource.removeEventListener('settings.changed', handleSettingsChange);
     };
   }, [eventSource]);
 
@@ -347,15 +391,18 @@ export default function Shell({ children, displayName, displayLocation, eventSou
               paddingLeft: '100%',
               animation: 'scroll-left 30s linear infinite',
             }}>
-              <span style={{ fontSize: '1.3em', marginRight: '50px' }}>
-                ● {displayName && displayLocation ? `${displayName} - ${displayLocation}` : 'Welcome to Team-Sub Navigator'}
-              </span>
-              <span style={{ fontSize: '1.3em', marginRight: '50px' }}>
-                ● Metro Arrivals Updated Every 30s
-              </span>
-              <span style={{ fontSize: '1.3em', marginRight: '50px' }}>
-                ● For service alerts and schedule changes, check the transit information panel
-              </span>
+              {/* Display name/location as first message if available */}
+              {displayName && displayLocation && (
+                <span style={{ fontSize: '1.3em', marginRight: '50px' }}>
+                  ● {displayName} - {displayLocation}
+                </span>
+              )}
+              {/* Dynamic ticker messages from backend */}
+              {tickerMessages.map((message, index) => (
+                <span key={index} style={{ fontSize: '1.3em', marginRight: '50px' }}>
+                  ● {message}
+                </span>
+              ))}
             </div>
           </div>
         </div>
