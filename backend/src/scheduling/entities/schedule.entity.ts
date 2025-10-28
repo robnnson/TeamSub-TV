@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { Display } from '../../displays/entities/display.entity';
 import { Content } from '../../content/entities/content.entity';
+import { Playlist } from '../../playlists/entities/playlist.entity';
 
 @Entity('schedules')
 @Index(['displayId', 'startTime', 'endTime'])
@@ -31,9 +32,17 @@ export class Schedule {
   @Column({ name: 'content_id', nullable: true })
   contentId: string;
 
-  // Playlist support - array of content IDs
+  // Simple playlist support - array of content IDs (no duration override)
   @Column({ type: 'json', nullable: true })
   contentIds: string[];
+
+  // Advanced playlist support - reference to Playlist entity (with duration overrides)
+  @ManyToOne(() => Playlist, { onDelete: 'CASCADE', nullable: true, eager: true })
+  @JoinColumn({ name: 'playlist_id' })
+  playlist: Playlist;
+
+  @Column({ name: 'playlist_id', nullable: true })
+  playlistId: string;
 
   @Column({ type: 'timestamp' })
   startTime: Date;

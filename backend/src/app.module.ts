@@ -12,6 +12,7 @@ import { DisplaysModule } from './displays/displays.module';
 import { SchedulingModule } from './scheduling/scheduling.module';
 import { SettingsModule } from './settings/settings.module';
 import { SseModule } from './sse/sse.module';
+import { PlaylistsModule } from './playlists/playlists.module';
 
 @Module({
   imports: [
@@ -68,6 +69,7 @@ import { SseModule } from './sse/sse.module';
     SchedulingModule,
     SettingsModule,
     SseModule,
+    PlaylistsModule,
   ],
 })
 export class AppModule {}

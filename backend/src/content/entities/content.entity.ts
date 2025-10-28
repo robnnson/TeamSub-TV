@@ -39,6 +39,12 @@ export class Content {
   @Column({ type: 'jsonb', nullable: true })
   metadata: Record<string, any>;
 
+  @Column({ type: 'simple-array', nullable: true })
+  tags: string[];
+
+  @Column({ type: 'text', nullable: true })
+  thumbnailPath: string;
+
   @Column({ type: 'int', default: 10 })
   duration: number; // seconds
 

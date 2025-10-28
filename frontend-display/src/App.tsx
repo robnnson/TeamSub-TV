@@ -18,6 +18,10 @@ export default function App() {
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState(true);
 
+  // Playlist state
+  const [currentPlaylist, setCurrentPlaylist] = useState<string[] | null>(null);
+  const [currentPlaylistIndex, setCurrentPlaylistIndex] = useState(0);
+
   const apiClient = useRef<DisplayApiClient | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
 
@@ -103,14 +107,29 @@ export default function App() {
       try {
         // Handle both single content and playlists
         if (topSchedule.contentId) {
-          // Single content
+          // Single content - clear playlist state
+          setCurrentPlaylist(null);
+          setCurrentPlaylistIndex(0);
           const content = await apiClient.current.getContent(topSchedule.contentId);
           setCurrentContent(content);
         } else if (topSchedule.contentIds && topSchedule.contentIds.length > 0) {
-          // Playlist - for now, just show the first item
-          // TODO: Implement playlist rotation logic
-          const content = await apiClient.current.getContent(topSchedule.contentIds[0]);
-          setCurrentContent(content);
+          // Playlist - set or update playlist state
+          const playlistChanged = JSON.stringify(currentPlaylist) !== JSON.stringify(topSchedule.contentIds);
+
+          if (playlistChanged) {
+            // New playlist - start from beginning
+            console.log('Loading new playlist with', topSchedule.contentIds.length, 'items');
+            setCurrentPlaylist(topSchedule.contentIds);
+            setCurrentPlaylistIndex(0);
+            const content = await apiClient.current.getContent(topSchedule.contentIds[0]);
+            setCurrentContent(content);
+          } else {
+            // Same playlist - load current index item
+            const index = currentPlaylistIndex % topSchedule.contentIds.length;
+            console.log('Loading playlist item', index + 1, 'of', topSchedule.contentIds.length);
+            const content = await apiClient.current.getContent(topSchedule.contentIds[index]);
+            setCurrentContent(content);
+          }
         } else {
           console.error('Schedule has no content or contentIds');
           setError('Schedule configuration error');
@@ -123,8 +142,10 @@ export default function App() {
     } else {
       // No active schedule - show default message
       setCurrentContent(null);
+      setCurrentPlaylist(null);
+      setCurrentPlaylistIndex(0);
     }
-  }, [schedules]);
+  }, [schedules, currentPlaylist, currentPlaylistIndex]);
 
   // Setup SSE connection
   useEffect(() => {
@@ -235,9 +256,30 @@ export default function App() {
 
   // Handle content completion
   const handleContentComplete = useCallback(() => {
-    // Move to next content or refresh
-    getCurrentContent();
-  }, [getCurrentContent]);
+    if (currentPlaylist && currentPlaylist.length > 1) {
+      // Move to next item in playlist
+      const nextIndex = (currentPlaylistIndex + 1) % currentPlaylist.length;
+      console.log('Advancing to next playlist item:', nextIndex + 1, 'of', currentPlaylist.length);
+      setCurrentPlaylistIndex(nextIndex);
+
+      // Load next content
+      if (apiClient.current) {
+        apiClient.current.getContent(currentPlaylist[nextIndex])
+          .then(content => {
+            setCurrentContent(content);
+            setError('');
+          })
+          .catch(err => {
+            console.error('Failed to load next playlist item:', err);
+            setError('Failed to load content');
+          });
+      }
+    } else {
+      // Single content or end of playlist - refresh to check for schedule changes
+      console.log('Content complete, refreshing...');
+      getCurrentContent();
+    }
+  }, [currentPlaylist, currentPlaylistIndex, getCurrentContent]);
 
   if (!configured) {
     return <PairingCodeScreen onPaired={handleConfigured} />;

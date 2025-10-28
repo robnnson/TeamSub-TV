@@ -30,6 +30,8 @@ export interface Content {
   filePath: string | null;
   textContent: string | null;
   metadata: Record<string, any>;
+  tags: string[];
+  thumbnailPath: string | null;
   duration: number;
   createdById: string;
   createdAt: string;
@@ -97,6 +99,26 @@ export interface ScheduleStats {
   total: number;
   active: number;
   inactive: number;
+}
+
+// Playlist types
+export interface PlaylistItem {
+  id: string;
+  contentId: string;
+  content: Content;
+  order: number;
+  durationOverride: number | null;
+}
+
+export interface Playlist {
+  id: string;
+  name: string;
+  description: string | null;
+  items: PlaylistItem[];
+  createdById: string;
+  createdBy?: User;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // API Response types

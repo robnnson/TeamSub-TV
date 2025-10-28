@@ -10,6 +10,7 @@ import type {
   ContentStats,
   DisplayStats,
   ScheduleStats,
+  Playlist,
 } from '../types';
 
 class ApiClient {
@@ -312,6 +313,42 @@ class ApiClient {
       { status }
     );
     return data;
+  }
+
+  // Playlists endpoints
+  async getPlaylists(): Promise<Playlist[]> {
+    const { data } = await this.client.get<Playlist[]>('/playlists');
+    return data;
+  }
+
+  async getPlaylist(id: string): Promise<Playlist> {
+    const { data } = await this.client.get<Playlist>(`/playlists/${id}`);
+    return data;
+  }
+
+  async createPlaylist(playlistData: {
+    name: string;
+    description?: string;
+    items: Array<{ contentId: string; durationOverride?: number }>;
+  }): Promise<Playlist> {
+    const { data } = await this.client.post<Playlist>('/playlists', playlistData);
+    return data;
+  }
+
+  async updatePlaylist(
+    id: string,
+    playlistData: {
+      name?: string;
+      description?: string;
+      items?: Array<{ contentId: string; durationOverride?: number }>;
+    },
+  ): Promise<Playlist> {
+    const { data } = await this.client.patch<Playlist>(`/playlists/${id}`, playlistData);
+    return data;
+  }
+
+  async deletePlaylist(id: string): Promise<void> {
+    await this.client.delete(`/playlists/${id}`);
   }
 }
 
