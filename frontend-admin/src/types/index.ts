@@ -53,14 +53,27 @@ export interface Display {
   createdAt: string;
   updatedAt: string;
   apiKey?: string; // Only present on creation
+  groups?: DisplayGroup[];
+}
+
+// Display Group types
+export interface DisplayGroup {
+  id: string;
+  name: string;
+  description: string | null;
+  displays: Display[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 // Schedule types
 export interface Schedule {
   id: string;
-  displayId: string;
+  displayId: string | null;
+  displayGroupId: string | null;
   contentId: string | null;
   contentIds: string[] | null;
+  playlistId: string | null;
   startTime: string;
   endTime: string | null;
   recurrenceRule: string | null;
@@ -68,7 +81,9 @@ export interface Schedule {
   isActive: boolean;
   createdAt: string;
   display?: Display;
+  displayGroup?: DisplayGroup;
   content?: Content;
+  playlist?: Playlist;
 }
 
 // Settings types

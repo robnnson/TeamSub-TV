@@ -6,6 +6,7 @@ import DashboardLayout from './components/layouts/DashboardLayout';
 import DashboardPage from './pages/DashboardPage';
 import ContentPage from './pages/ContentPage';
 import DisplaysPage from './pages/DisplaysPage';
+import DisplayGroupsPage from './pages/DisplayGroupsPage';
 import SchedulesPage from './pages/SchedulesPage';
 import SettingsPage from './pages/SettingsPage';
 import TickerSettingsPage from './pages/TickerSettingsPage';
@@ -49,6 +50,7 @@ function App() {
             <Route index element={<DashboardPage />} />
             <Route path="content" element={<ContentPage />} />
             <Route path="displays" element={<DisplaysPage />} />
+            <Route path="display-groups" element={<DisplayGroupsPage />} />
             <Route path="schedules" element={<SchedulesPage />} />
             <Route path="playlists" element={<PlaylistsPage />} />
             <Route path="users" element={<UsersPage />} />

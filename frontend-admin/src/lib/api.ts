@@ -5,6 +5,7 @@ import type {
   User,
   Content,
   Display,
+  DisplayGroup,
   Schedule,
   Setting,
   ContentStats,
@@ -233,6 +234,55 @@ class ApiClient {
     return data;
   }
 
+  // Display Groups endpoints
+  async getDisplayGroups(): Promise<DisplayGroup[]> {
+    const { data } = await this.client.get<DisplayGroup[]>('/display-groups');
+    return data;
+  }
+
+  async getDisplayGroup(id: string): Promise<DisplayGroup> {
+    const { data } = await this.client.get<DisplayGroup>(`/display-groups/${id}`);
+    return data;
+  }
+
+  async createDisplayGroup(groupData: {
+    name: string;
+    description?: string;
+    displayIds?: string[];
+  }): Promise<DisplayGroup> {
+    const { data } = await this.client.post<DisplayGroup>('/display-groups', groupData);
+    return data;
+  }
+
+  async updateDisplayGroup(
+    id: string,
+    groupData: {
+      name?: string;
+      description?: string;
+      displayIds?: string[];
+    }
+  ): Promise<DisplayGroup> {
+    const { data } = await this.client.patch<DisplayGroup>(`/display-groups/${id}`, groupData);
+    return data;
+  }
+
+  async deleteDisplayGroup(id: string): Promise<void> {
+    await this.client.delete(`/display-groups/${id}`);
+  }
+
+  async addDisplayToGroup(groupId: string, displayId: string): Promise<DisplayGroup> {
+    const { data } = await this.client.post<DisplayGroup>(
+      `/display-groups/${groupId}/displays/${displayId}`
+    );
+    return data;
+  }
+
+  async removeDisplayFromGroup(groupId: string, displayId: string): Promise<DisplayGroup> {
+    await this.client.delete(`/display-groups/${groupId}/displays/${displayId}`);
+    const { data } = await this.client.get<DisplayGroup>(`/display-groups/${groupId}`);
+    return data;
+  }
+
   // Schedules endpoints
   async getSchedules(displayId?: string): Promise<Schedule[]> {
     const params = displayId ? { displayId } : {};
@@ -246,9 +296,11 @@ class ApiClient {
   }
 
   async createSchedule(scheduleData: {
-    displayId: string;
+    displayId?: string;
+    displayGroupId?: string;
     contentId?: string;
     contentIds?: string[];
+    playlistId?: string;
     startTime: string;
     endTime?: string;
     recurrenceRule?: string;

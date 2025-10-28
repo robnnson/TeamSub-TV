@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Plus, Trash2, X, Monitor, FileText, Circle } from 'lucide-react';
+import { Calendar, Plus, Trash2, X, Monitor, FileText, Circle, Layers } from 'lucide-react';
 import { api } from '../lib/api';
-import type { Schedule, Display, Content } from '../types';
+import type { Schedule, Display, DisplayGroup, Content, Playlist } from '../types';
 
 export default function SchedulesPage() {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
@@ -125,15 +125,31 @@ export default function SchedulesPage() {
                   <tr key={schedule.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
-                        <Monitor className="w-4 h-4 text-gray-400" />
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">
-                            {schedule.display?.name || 'Unknown'}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {schedule.display?.location}
-                          </div>
-                        </div>
+                        {schedule.displayGroup ? (
+                          <>
+                            <Layers className="w-4 h-4 text-purple-500" />
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {schedule.displayGroup.name}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                Group ({schedule.displayGroup.displays?.length || 0} displays)
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <Monitor className="w-4 h-4 text-gray-400" />
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {schedule.display?.name || 'Unknown'}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {schedule.display?.location}
+                              </div>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -227,24 +243,18 @@ export default function SchedulesPage() {
   );
 }
 
-interface Playlist {
-  id: string;
-  name: string;
-  description: string;
-  contentIds: string[];
-  createdAt: string;
-  updatedAt: string;
-}
-
 function CreateScheduleModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
   const [displays, setDisplays] = useState<Display[]>([]);
+  const [displayGroups, setDisplayGroups] = useState<DisplayGroup[]>([]);
   const [content, setContent] = useState<Content[]>([]);
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
+  const [targetMode, setTargetMode] = useState<'display' | 'group'>('display');
   const [displayId, setDisplayId] = useState('');
+  const [displayGroupId, setDisplayGroupId] = useState('');
   const [contentId, setContentId] = useState('');
   const [contentIds, setContentIds] = useState<string[]>([]);
   const [selectedPlaylistId, setSelectedPlaylistId] = useState('');
-  const [contentMode, setContentMode] = useState<'single' | 'adhoc' | 'playlist'>('single');
+  const [contentMode, setContentMode] = useState<'single' | 'adhoc' | 'playlist'>('playlist');
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [recurrenceRule, setRecurrenceRule] = useState('');
@@ -259,25 +269,34 @@ function CreateScheduleModal({ onClose, onSuccess }: { onClose: () => void; onSu
 
   const loadData = async () => {
     try {
-      const [displaysData, contentData] = await Promise.all([
+      const [displaysData, groupsData, contentData, playlistsData] = await Promise.all([
         api.getDisplays(),
+        api.getDisplayGroups(),
         api.getContent(),
+        api.getPlaylists(),
       ]);
       setDisplays(displaysData);
+      setDisplayGroups(groupsData);
       setContent(contentData);
-
-      // Load playlists from localStorage
-      const storedPlaylists = localStorage.getItem('playlists');
-      if (storedPlaylists) {
-        setPlaylists(JSON.parse(storedPlaylists));
-      }
+      setPlaylists(playlistsData);
     } catch (err: any) {
-      setError('Failed to load displays and content');
+      setError('Failed to load data');
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate target selection
+    if (targetMode === 'display' && !displayId) {
+      setError('Please select a display');
+      return;
+    }
+
+    if (targetMode === 'group' && !displayGroupId) {
+      setError('Please select a display group');
+      return;
+    }
 
     // Validate: if recurring, end time is required
     if (recurrenceRule && !endTime) {
@@ -308,22 +327,22 @@ function CreateScheduleModal({ onClose, onSuccess }: { onClose: () => void; onSu
       // Determine which content to send based on mode
       let finalContentId: string | undefined;
       let finalContentIds: string[] | undefined;
+      let finalPlaylistId: string | undefined;
 
       if (contentMode === 'single') {
         finalContentId = contentId;
       } else if (contentMode === 'adhoc') {
         finalContentIds = contentIds;
       } else if (contentMode === 'playlist') {
-        const selectedPlaylist = playlists.find(p => p.id === selectedPlaylistId);
-        if (selectedPlaylist) {
-          finalContentIds = selectedPlaylist.contentIds;
-        }
+        finalPlaylistId = selectedPlaylistId;
       }
 
       await api.createSchedule({
-        displayId,
+        displayId: targetMode === 'display' ? displayId : undefined,
+        displayGroupId: targetMode === 'group' ? displayGroupId : undefined,
         contentId: finalContentId,
         contentIds: finalContentIds,
+        playlistId: finalPlaylistId,
         startTime: new Date(startTime).toISOString(),
         endTime: endTime ? new Date(endTime).toISOString() : undefined,
         recurrenceRule: recurrenceRule || undefined,
@@ -358,22 +377,65 @@ function CreateScheduleModal({ onClose, onSuccess }: { onClose: () => void; onSu
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Display *
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Target *
                 </label>
-                <select
-                  value={displayId}
-                  onChange={(e) => setDisplayId(e.target.value)}
-                  className="input w-full"
-                  required
-                >
-                  <option value="">Select a display</option>
-                  {displays.map((display) => (
-                    <option key={display.id} value={display.id}>
-                      {display.name} - {display.location}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex items-center gap-4 mb-3">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      checked={targetMode === 'display'}
+                      onChange={() => {
+                        setTargetMode('display');
+                        setDisplayGroupId('');
+                      }}
+                      className="w-4 h-4 text-primary-600"
+                    />
+                    <span className="text-sm text-gray-700">Single Display</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      checked={targetMode === 'group'}
+                      onChange={() => {
+                        setTargetMode('group');
+                        setDisplayId('');
+                      }}
+                      className="w-4 h-4 text-primary-600"
+                    />
+                    <span className="text-sm text-gray-700">Display Group</span>
+                  </label>
+                </div>
+
+                {targetMode === 'display' ? (
+                  <select
+                    value={displayId}
+                    onChange={(e) => setDisplayId(e.target.value)}
+                    className="input w-full"
+                    required
+                  >
+                    <option value="">Select a display</option>
+                    {displays.map((display) => (
+                      <option key={display.id} value={display.id}>
+                        {display.name} - {display.location}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <select
+                    value={displayGroupId}
+                    onChange={(e) => setDisplayGroupId(e.target.value)}
+                    className="input w-full"
+                    required
+                  >
+                    <option value="">Select a display group</option>
+                    {displayGroups.map((group) => (
+                      <option key={group.id} value={group.id}>
+                        {group.name} ({group.displays.length} displays)
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
 
               <div>
@@ -449,7 +511,7 @@ function CreateScheduleModal({ onClose, onSuccess }: { onClose: () => void; onSu
                       <option value="">Select a playlist</option>
                       {playlists.map((playlist) => (
                         <option key={playlist.id} value={playlist.id}>
-                          {playlist.name} ({playlist.contentIds.length} items)
+                          {playlist.name} ({playlist.items?.length || 0} items)
                         </option>
                       ))}
                     </select>

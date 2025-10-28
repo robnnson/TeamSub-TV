@@ -12,6 +12,7 @@ import {
   Users,
   MessageSquare,
   List,
+  Layers,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { api } from '../../lib/api';
@@ -21,6 +22,7 @@ const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Content', href: '/content', icon: FileText },
   { name: 'Displays', href: '/displays', icon: Monitor },
+  { name: 'Display Groups', href: '/display-groups', icon: Layers },
   { name: 'Schedules', href: '/schedules', icon: Calendar },
   { name: 'Playlists', href: '/playlists', icon: List },
   { name: 'Users', href: '/users', icon: Users },
