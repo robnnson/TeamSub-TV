@@ -353,7 +353,6 @@ export default function Shell({ children, displayName, displayLocation, eventSou
           gridRow: 'span 2',
           background: 'rgba(255, 255, 255, 0.95)',
           borderRadius: '15px',
-          padding: '20px',
           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
           display: 'flex',
           flexDirection: 'column',
@@ -362,14 +361,15 @@ export default function Shell({ children, displayName, displayLocation, eventSou
         }}>
           <div style={{
             position: 'absolute',
-            top: '20px',
-            left: '20px',
-            right: '20px',
+            top: 0,
+            left: 0,
+            right: 0,
             bottom: '80px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            overflowY: 'auto',
+            overflow: 'hidden',
+            borderRadius: '15px 15px 0 0',
           }}>
             {children}
           </div>
@@ -384,6 +384,7 @@ export default function Shell({ children, displayName, displayLocation, eventSou
             color: 'white',
             padding: '15px 0',
             overflow: 'hidden',
+            borderRadius: '0 0 15px 15px',
           }}>
             <div style={{
               display: 'inline-block',

@@ -11,6 +11,7 @@ import {
   Shield,
   Users,
   MessageSquare,
+  List,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { api } from '../../lib/api';
@@ -21,6 +22,7 @@ const navigation = [
   { name: 'Content', href: '/content', icon: FileText },
   { name: 'Displays', href: '/displays', icon: Monitor },
   { name: 'Schedules', href: '/schedules', icon: Calendar },
+  { name: 'Playlists', href: '/playlists', icon: List },
   { name: 'Users', href: '/users', icon: Users },
   { name: 'Ticker Messages', href: '/ticker', icon: MessageSquare },
   { name: 'Settings', href: '/settings', icon: Settings },

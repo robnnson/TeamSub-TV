@@ -4,10 +4,11 @@ import type { Content } from '../types';
 interface ContentRendererProps {
   content: Content;
   apiUrl: string;
+  apiKey?: string;
   onComplete?: () => void;
 }
 
-export default function ContentRenderer({ content, apiUrl, onComplete }: ContentRendererProps) {
+export default function ContentRenderer({ content, apiUrl, apiKey, onComplete }: ContentRendererProps) {
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
 
   useEffect(() => {
@@ -42,25 +43,30 @@ export default function ContentRenderer({ content, apiUrl, onComplete }: Content
     };
   }, [content, onComplete]);
 
-  const getContentUrl = (path: string) => {
-    return `${apiUrl}${path}`;
+  // Get the file URL using content ID endpoint with API key for authentication
+  const getFileUrl = () => {
+    const baseUrl = `${apiUrl}/content/${content.id}/file`;
+    if (apiKey) {
+      return `${baseUrl}?apiKey=${encodeURIComponent(apiKey)}`;
+    }
+    return baseUrl;
   };
 
   switch (content.type) {
     case 'image':
       return (
         <img
-          src={content.filePath ? getContentUrl(content.filePath) : ''}
+          src={getFileUrl()}
           alt={content.title}
-          style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
         />
       );
 
     case 'video':
       return (
         <video
-          src={content.filePath ? getContentUrl(content.filePath) : ''}
-          style={{ maxWidth: '100%', maxHeight: '100%' }}
+          src={getFileUrl()}
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
           autoPlay
           muted
           onEnded={onComplete}
@@ -68,15 +74,17 @@ export default function ContentRenderer({ content, apiUrl, onComplete }: Content
       );
 
     case 'slideshow':
+      // For slideshows, we'd need individual content IDs for each slide
+      // This is a future enhancement - for now just show first slide
       const slides = (content.metadata?.slides as string[]) || [];
       return (
         <>
           {slides[currentSlideIndex] && (
             <img
               key={currentSlideIndex}
-              src={getContentUrl(slides[currentSlideIndex])}
+              src={getFileUrl()}
               alt={`${content.title} - Slide ${currentSlideIndex + 1}`}
-              style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             />
           )}
         </>

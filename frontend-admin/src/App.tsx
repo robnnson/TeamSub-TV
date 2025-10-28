@@ -10,6 +10,7 @@ import SchedulesPage from './pages/SchedulesPage';
 import SettingsPage from './pages/SettingsPage';
 import TickerSettingsPage from './pages/TickerSettingsPage';
 import UsersPage from './pages/UsersPage';
+import PlaylistsPage from './pages/PlaylistsPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -49,6 +50,7 @@ function App() {
             <Route path="content" element={<ContentPage />} />
             <Route path="displays" element={<DisplaysPage />} />
             <Route path="schedules" element={<SchedulesPage />} />
+            <Route path="playlists" element={<PlaylistsPage />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="ticker" element={<TickerSettingsPage />} />

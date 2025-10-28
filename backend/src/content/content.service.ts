@@ -97,7 +97,8 @@ export class ContentService {
     // Delete associated file if it exists
     if (content.filePath) {
       try {
-        const fullPath = path.join(process.cwd(), '..', 'media', content.filePath);
+        const mediaDir = process.env.MEDIA_DIR || path.join(process.cwd(), 'media');
+        const fullPath = path.join(mediaDir, content.filePath);
         await fs.unlink(fullPath);
       } catch (error) {
         console.error(`Failed to delete file: ${content.filePath}`, error);
@@ -117,7 +118,8 @@ export class ContentService {
       throw new BadRequestException('Content does not have an associated file');
     }
 
-    const fullPath = path.join(process.cwd(), '..', 'media', content.filePath);
+    const mediaDir = process.env.MEDIA_DIR || path.join(process.cwd(), 'media');
+    const fullPath = path.join(mediaDir, content.filePath);
 
     try {
       await fs.access(fullPath);

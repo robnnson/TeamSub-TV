@@ -112,8 +112,9 @@ export class ContentController {
       const ext = path.extname(data.filename);
       const filename = `${uniqueSuffix}${ext}`;
 
-      // Save file to media directory
-      const uploadPath = path.join(process.cwd(), '..', 'media', 'images');
+      // Save file to media directory (mounted at /app/media in Docker)
+      const mediaDir = process.env.MEDIA_DIR || path.join(process.cwd(), 'media');
+      const uploadPath = path.join(mediaDir, 'images');
 
       // Ensure directory exists
       await fs.mkdir(uploadPath, { recursive: true });
@@ -126,7 +127,7 @@ export class ContentController {
       const title = fields.title?.value || data.filename;
       const duration = fields.duration?.value ? parseInt(fields.duration.value) : 10;
 
-      // Store relative path from media directory
+      // Store relative path from media directory (for serving via /images endpoint)
       const relativePath = path.join('images', filename);
 
       return this.contentService.create(

@@ -273,6 +273,7 @@ export default function App() {
         <ContentRenderer
           content={currentContent}
           apiUrl={API_URL}
+          apiKey={localStorage.getItem('display_api_key') || undefined}
           onComplete={handleContentComplete}
         />
       ) : (

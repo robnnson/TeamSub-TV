@@ -43,9 +43,9 @@ class DisplayApiClient {
     return data;
   }
 
-  // Get content URL
-  getContentUrl(filePath: string): string {
-    return `/api${filePath}`;
+  // Get content file URL by content ID
+  getContentFileUrl(contentId: string): string {
+    return `/api/content/${contentId}/file`;
   }
 
   // Update display heartbeat
