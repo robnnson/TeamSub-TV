@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Digital Signage - Team Submarine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      background: linear-gradient(to bottom right, #eef2f7, #dfe6ed);
+    }
+
+    .sidebar {
+      width: 320px;
+      background: linear-gradient(to bottom, #0b2545, #123456);
+      color: white;
+      padding: 2rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 4px 0 10px rgba(0,0,0,0.15);
+      overflow-y: auto;
+    }
+
+    .weather-card, .train-arrivals, .fpc-alert, .lan-alert, .drive-times {
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin-top: 2rem;
+      backdrop-filter: blur(4px);
+    }
+
+    .weather-card img {
+      width: 70px;
+      height: 70px;
+      margin-bottom: 0.5rem;
+    }
+
+    .weather-temp {
+      font-size: 2.2rem;
+      font-weight: 600;
+    }
+
+    .weather-desc {
+      font-size: 1rem;
+      opacity: 0.9;
+    }
+
+    .train-arrivals h2,
+    .drive-times h2 {
+      font-size: 1.4rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .walk-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 1rem;
+      font-weight: 400;
+      color: #ccc;
+      margin-top: 0.3rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .walk-indicator svg {
+      height: 16px;
+      width: 16px;
+      margin-right: 0.3rem;
+      fill: #ccc;
+    }
+
+    .train-arrivals ul,
+    #drive-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .train-arrivals li,
+    #drive-list li {
+      font-size: 1.1rem;
+      line-height: 1.6;
+      padding: 0.2rem 0;
+      display: flex;
+      flex-direction: column;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .train-line {
+      font-weight: 600;
+      margin-right: 0.5rem;
+      color: #6ee087;
+    }
+
+    .fpc-label, .lan-label {
+      font-weight: 600;
+      color: #ffffff;
+    }
+
+    .fpc-status, .lan-status {
+      font-size: 1.1rem;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+
+    .fpc-status { color: #066f36; }
+    .lan-status { color: #ffc107; }
+
+    .main-frame {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .frame-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.2rem 2rem;
+      background: linear-gradient(to right, #061f31, #0b2c4d);
+      color: white;
+    }
+
+    .logo {
+      height: 50px;
+    }
+
+    .datetime {
+      font-size: 1.25rem;
+      font-weight: 500;
+    }
+
+    .frame-content {
+      flex: 1;
+      padding: 2rem;
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .frame-footer {
+      background-color: #061f31;
+      color: white;
+      font-size: 1rem;
+      padding: 0.8rem 1rem;
+      position: relative;
+    }
+
+    .footer-scroll {
+      white-space: nowrap;
+      overflow: hidden;
+      box-sizing: border-box;
+    }
+
+    .footer-scroll span {
+      display: inline-block;
+      padding-left: 100%;
+      animation: scroll-left 25s linear infinite;
+    }
+
+    @keyframes scroll-left {
+      0% { transform: translateX(0%); }
+      100% { transform: translateX(-100%); }
+    }
+
+    .drive-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .drive-time {
+      color: #6ee087;
+    }
+
+    .arrival-time {
+      font-size: 0.95rem;
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="weather-card" id="weather">
+      <img src="" alt="Weather Icon" id="weather-icon" />
+      <div class="weather-temp" id="weather-temp">--°F</div>
+      <div class="weather-desc" id="weather-desc">Loading...</div>
+    </div>
+
+    <div class="train-arrivals" id="train-arrivals">
+      <h2>Next Trains – Navy Yard</h2>
+      <div class="walk-indicator">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <path d="M13.5 5.5C14.33 5.5 15 4.83 15 4C15 3.17 14.33 2.5 13.5 2.5C12.67 2.5 12 3.17 12 4C12 4.83 12.67 5.5 13.5 5.5ZM9 22V15.5L7 13V8.5H8.5V12L11 14.5V22H9ZM16.75 22L15 14H17L18.75 22H16.75ZM18.5 10C17.67 10 17 10.67 17 11.5C17 12.33 17.67 13 18.5 13C19.33 13 20 12.33 20 11.5C20 10.67 19.33 10 18.5 10Z"/>
+        </svg>
+        14 min walk
+      </div>
+      <ul id="train-list">Loading train data...</ul>
+    </div>
+
+    <div class="drive-times" id="drive-times">
+      <h2>Driving Times</h2>
+      <ul id="drive-list">
+        <li>Loading driving times...</li>
+      </ul>
+    </div>
+  </aside>
+
+  <div class="main-frame">
+    <header class="frame-header">
+      <div style="display: flex; align-items: center; gap: 1rem;">
+        <img src="logo.png" alt="Company Logo" class="logo" />
+        <span style="font-size: 1.75rem; font-weight: 600;">TEAM SUBMARINE</span>
+      </div>
+      <div class="datetime" id="datetime"></div>
+    </header>
+
+    <main class="frame-content">
+      <p style="color: #999; font-size: 1.4rem;">Welcome to the building. Please enjoy our latest updates.</p>
+    </main>
+
+    <footer class="frame-footer">
+      <div class="footer-scroll">
+        <span>Want a message displayed? Contact COS Webster @ tsub_cos@us.navy.mil • Metro Arrivals Updated Every 30s</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    function updateDateTime() {
+      const now = new Date();
+      const options = { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' };
+      document.getElementById('datetime').textContent = now.toLocaleString('en-US', options);
+    }
+
+    async function fetchFpconStatus() {
+      try {
+        const res = await fetch('fpcon.json');
+        const data = await res.json();
+        const status = data.fpcon.toUpperCase();
+        const el = document.getElementById('fpc-status');
+        el.textContent = status;
+        const colorMap = {
+          NORMAL: '#4caf50',
+          ALPHA: '#03a9f4',
+          BRAVO: '#ffc107',
+          CHARLIE: '#ff5722',
+          DELTA: '#f44336'
+        };
+        el.style.color = colorMap[status] || '#fff';
+      } catch {
+        document.getElementById('fpc-status').textContent = 'Unavailable';
+      }
+    }
+
+    async function fetchLANStatus() {
+      try {
+        const res = await fetch('lan.json');
+        const data = await res.json();
+        const status = data.lan.toUpperCase();
+        const el = document.getElementById('lan-status');
+        el.textContent = status;
+        const colorMap = {
+          NORMAL: '#4caf50',
+          DEGRADED: '#03a9f4',
+          OUTAGE: '#f44336'
+        };
+        el.style.color = colorMap[status] || '#fff';
+      } catch {
+        document.getElementById('lan-status').textContent = 'Unavailable';
+      }
+    }
+
+    async function fetchWeather() {
+      try {
+        const res = await fetch('https://api.openweathermap.org/data/2.5/weather?q=Washington,DC,US&units=imperial&appid=9fcfc0149fef9015a6eaba1df22caf5b');
+        const data = await res.json();
+        const temp = Math.round(data.main.temp);
+        const desc = data.weather[0].description;
+        const iconCode = data.weather[0].icon;
+        document.getElementById('weather-temp').textContent = `${temp}°F`;
+        document.getElementById('weather-desc').textContent = desc.charAt(0).toUpperCase() + desc.slice(1);
+        document.getElementById('weather-icon').src = `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
+      } catch {
+        document.getElementById('weather-desc').textContent = 'Weather unavailable';
+      }
+    }
+
+    async function fetchTrainArrivals() {
+      const apiKey = 'd1df6a70755d42398beefaf6ee90a662';
+      const stationCode = 'F05';
+      const url = `https://api.wmata.com/StationPrediction.svc/json/GetPrediction/${stationCode}`;
+      try {
+        const response = await fetch(url, { headers: { api_key: apiKey } });
+        const data = await response.json();
+        const trainList = document.getElementById('train-list');
+        trainList.innerHTML = '';
+        const validTrains = data.Trains.filter(train => {
+          const min = parseInt(train.Min);
+          return !isNaN(min);
+        });
+        if (validTrains.length > 0) {
+          validTrains.forEach(train => {
+            const listItem = document.createElement('li');
+            listItem.innerHTML = `
+              <div class="drive-row">
+                <span class="train-line">${train.Line}</span>
+                <span class="train-destination">to ${train.Destination}</span>
+                <span class="train-time">${train.Min} min</span>
+              </div>`;
+            trainList.appendChild(listItem);
+          });
+        } else {
+          trainList.innerHTML = '<li>No upcoming trains.</li>';
+        }
+      } catch {
+        document.getElementById('train-list').innerHTML = '<li>Error loading train data.</li>';
+      }
+    }
+
+    async function fetchDrivingTime(fromLat, fromLon, toLat, toLon) {
+      const key = '5mbANdobpExgtq28V5rxlSylvDx87ulH';
+      const url = `https://api.tomtom.com/routing/1/calculateRoute/${fromLat},${fromLon}:${toLat},${toLon}/json?key=${key}&travelMode=car`;
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        const summary = data.routes?.[0]?.summary;
+        const mins = Math.round(summary.travelTimeInSeconds / 60);
+        const arrival = new Date(Date.now() + summary.travelTimeInSeconds * 1000);
+        return {
+          minutes: mins,
+          arrival: arrival.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+        };
+      } catch (err) {
+        console.error('Drive time fetch failed:', err);
+        return { minutes: 'N/A', arrival: '—' };
+      }
+    }
+
+    async function fetchAllDrivingTimes() {
+      const driveList = document.getElementById('drive-list');
+      driveList.innerHTML = '';
+      const from = [38.87382041883797, -76.9972499997064];
+      const destinations = [
+        { name: 'Pentagon', to: [38.868746, -77.056708] },
+        { name: 'JBAB', to: [38.835532, -76.995000] },
+        { name: 'Andrews AFB', to: [38.810794, -76.866222] },
+        { name: 'Pax River', to: [38.273144, -76.453244] },
+        { name: 'Reston, VA', to: [38.958630, -77.357002] },
+      ];
+
+      for (const dest of destinations) {
+        const { minutes, arrival } = await fetchDrivingTime(from[0], from[1], dest.to[0], dest.to[1]);
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <div class="drive-row">
+            <span>${dest.name}</span>
+            <span class="drive-time">${minutes} min</span>
+          </div>
+          <div class="arrival-time">Arrives approx. at ${arrival}</div>
+        `;
+        driveList.appendChild(li);
+      }
+    }
+
+    updateDateTime();
+    fetchFpconStatus();
+    fetchWeather();
+    fetchTrainArrivals();
+    fetchLANStatus();
+    fetchAllDrivingTimes();
+
+    setInterval(updateDateTime, 10000);
+    setInterval(fetchFpconStatus, 60000);
+    setInterval(fetchLANStatus, 5000);
+    setInterval(fetchWeather, 600000);
+    setInterval(fetchTrainArrivals, 30000);
+    setInterval(fetchAllDrivingTimes, 300000);
+  </script>
+</body>
+</html>
