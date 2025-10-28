@@ -125,7 +125,7 @@ export default function PlaylistEditor({ playlist, onClose, onSuccess }: Playlis
         description: description || undefined,
         items: items.map(item => ({
           contentId: item.contentId,
-          durationOverride: item.durationOverride,
+          durationOverride: item.durationOverride ?? undefined,
         })),
       };
 
@@ -386,7 +386,6 @@ function SortableItem({
   };
 
   const content = item.content;
-  const displayDuration = item.durationOverride ?? content?.duration ?? 10;
 
   return (
     <div

@@ -18,7 +18,7 @@ export default function Shell({ children, displayName, displayLocation, eventSou
   const [fpconStatus, setFpconStatus] = useState({ status: 'LOADING...', color: '#666' });
   const [lanStatus, setLanStatus] = useState({ status: 'LOADING...', color: '#666' });
   const [tickerMessages, setTickerMessages] = useState<string[]>([
-    'Welcome to Team-Sub Navigator',
+    'Welcome to Team Sub TV',
     'Metro Arrivals Updated Every 30s',
   ]);
 

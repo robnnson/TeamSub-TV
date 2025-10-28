@@ -2,10 +2,9 @@ interface ErrorScreenProps {
   displayName?: string;
   displayLocation?: string;
   error: string;
-  onRetry: () => void;
 }
 
-export default function ErrorScreen({ displayName, displayLocation, error, onRetry }: ErrorScreenProps) {
+export default function ErrorScreen({ displayName, displayLocation, error }: ErrorScreenProps) {
   return (
     <div
       style={{
@@ -19,33 +18,32 @@ export default function ErrorScreen({ displayName, displayLocation, error, onRet
         padding: '40px',
       }}
     >
-      {/* TeamSub Logo */}
+      {/* Team Sub TV Logo */}
       <div
         style={{
           marginBottom: '40px',
           textAlign: 'center',
         }}
       >
-        <div
+        <img
+          src="/img/logo.png"
+          alt="Team Sub TV"
           style={{
-            fontSize: '5em',
-            fontWeight: 'bold',
-            color: 'white',
-            marginBottom: '10px',
-            fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+            maxWidth: '400px',
+            maxHeight: '150px',
+            marginBottom: '20px',
+            filter: 'drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3))',
           }}
-        >
-          TeamSub
-        </div>
+        />
         <div
           style={{
-            fontSize: '2.5em',
-            color: 'rgba(255, 255, 255, 0.8)',
-            letterSpacing: '0.2em',
+            fontSize: '1.6em',
+            color: 'rgba(255, 255, 255, 0.7)',
+            letterSpacing: '0.1em',
             fontWeight: '300',
           }}
         >
-          NAVIGATOR
+          Digital Signage System
         </div>
       </div>
 
@@ -118,43 +116,22 @@ export default function ErrorScreen({ displayName, displayLocation, error, onRet
         </div>
       </div>
 
-      {/* Retry Button */}
-      <button
-        onClick={onRetry}
-        style={{
-          fontSize: '1.8em',
-          padding: '20px 60px',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white',
-          border: 'none',
-          borderRadius: '50px',
-          cursor: 'pointer',
-          fontWeight: 'bold',
-          boxShadow: '0 8px 20px rgba(102, 126, 234, 0.4)',
-          transition: 'all 0.3s ease',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'translateY(-2px)';
-          e.currentTarget.style.boxShadow = '0 12px 30px rgba(102, 126, 234, 0.6)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = 'translateY(0)';
-          e.currentTarget.style.boxShadow = '0 8px 20px rgba(102, 126, 234, 0.4)';
-        }}
-      >
-        Retry Connection
-      </button>
-
       {/* Status Message */}
       <div
         style={{
           marginTop: '40px',
-          fontSize: '1.4em',
-          color: 'rgba(255, 255, 255, 0.6)',
+          fontSize: '1.6em',
+          color: 'rgba(255, 255, 255, 0.7)',
           textAlign: 'center',
+          maxWidth: '800px',
         }}
       >
-        Please contact IT support if this issue persists
+        <div style={{ marginBottom: '15px', fontWeight: '500' }}>
+          Attempting to reconnect automatically...
+        </div>
+        <div style={{ fontSize: '0.85em', color: 'rgba(255, 255, 255, 0.5)' }}>
+          Please contact IT support if this issue persists
+        </div>
       </div>
     </div>
   );
