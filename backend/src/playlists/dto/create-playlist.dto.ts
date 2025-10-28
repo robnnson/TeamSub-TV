@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsArray, ValidateNested } from 'class-validator';
+import { IsString, IsOptional, IsArray, ValidateNested, IsBoolean } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class PlaylistItemDto {
@@ -16,6 +16,10 @@ export class CreatePlaylistDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  loop?: boolean;
 
   @IsArray()
   @ValidateNested({ each: true })

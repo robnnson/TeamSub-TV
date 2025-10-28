@@ -22,6 +22,7 @@ export class PlaylistsService {
     const playlist = this.playlistRepository.create({
       name: createPlaylistDto.name,
       description: createPlaylistDto.description,
+      loop: createPlaylistDto.loop ?? true,
       createdById: userId,
     });
 
@@ -86,6 +87,9 @@ export class PlaylistsService {
     }
     if (updatePlaylistDto.description !== undefined) {
       playlist.description = updatePlaylistDto.description;
+    }
+    if (updatePlaylistDto.loop !== undefined) {
+      playlist.loop = updatePlaylistDto.loop;
     }
 
     await this.playlistRepository.save(playlist);

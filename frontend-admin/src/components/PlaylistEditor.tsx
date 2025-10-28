@@ -35,6 +35,7 @@ interface PlaylistEditorProps {
 export default function PlaylistEditor({ playlist, onClose, onSuccess }: PlaylistEditorProps) {
   const [name, setName] = useState(playlist?.name || '');
   const [description, setDescription] = useState(playlist?.description || '');
+  const [loop, setLoop] = useState(playlist?.loop ?? true);
   const [items, setItems] = useState<PlaylistItem[]>([]);
   const [availableContent, setAvailableContent] = useState<Content[]>([]);
   const [saving, setSaving] = useState(false);
@@ -123,6 +124,7 @@ export default function PlaylistEditor({ playlist, onClose, onSuccess }: Playlis
       const playlistData = {
         name,
         description: description || undefined,
+        loop,
         items: items.map(item => ({
           contentId: item.contentId,
           durationOverride: item.durationOverride ?? undefined,
@@ -227,6 +229,22 @@ export default function PlaylistEditor({ playlist, onClose, onSuccess }: Playlis
                   placeholder="Optional description"
                 />
               </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={loop}
+                  onChange={(e) => setLoop(e.target.checked)}
+                  className="w-4 h-4 text-primary-600 rounded"
+                />
+                <span className="text-sm font-medium text-gray-700">
+                  Loop playlist continuously
+                </span>
+              </label>
+              <span className="text-xs text-gray-500">
+                {loop ? 'Playlist will restart after the last item' : 'Playlist will play once and stop'}
+              </span>
             </div>
           </div>
 

@@ -12,11 +12,29 @@ export interface Content {
   updatedAt: string;
 }
 
+export interface PlaylistItem {
+  id: string;
+  contentId: string;
+  content: Content;
+  order: number;
+  durationOverride: number | null;
+}
+
+export interface Playlist {
+  id: string;
+  name: string;
+  description: string | null;
+  loop: boolean;
+  items: PlaylistItem[];
+}
+
 export interface Schedule {
   id: string;
   displayId: string;
   contentId: string | null;
   contentIds: string[] | null;
+  playlistId: string | null;
+  playlist?: Playlist;
   startTime: string;
   endTime: string | null;
   recurrenceRule: string | null;

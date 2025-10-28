@@ -329,6 +329,7 @@ class ApiClient {
   async createPlaylist(playlistData: {
     name: string;
     description?: string;
+    loop?: boolean;
     items: Array<{ contentId: string; durationOverride?: number }>;
   }): Promise<Playlist> {
     const { data } = await this.client.post<Playlist>('/playlists', playlistData);
@@ -340,6 +341,7 @@ class ApiClient {
     playlistData: {
       name?: string;
       description?: string;
+      loop?: boolean;
       items?: Array<{ contentId: string; durationOverride?: number }>;
     },
   ): Promise<Playlist> {

@@ -22,6 +22,9 @@ export class Playlist {
   @Column({ type: 'text', nullable: true })
   description: string;
 
+  @Column({ default: true })
+  loop: boolean;
+
   @OneToMany(() => PlaylistItem, (item) => item.playlist, {
     cascade: true,
     eager: true,

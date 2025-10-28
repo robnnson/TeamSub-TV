@@ -21,6 +21,7 @@ export default function App() {
   // Playlist state
   const [currentPlaylist, setCurrentPlaylist] = useState<string[] | null>(null);
   const [currentPlaylistIndex, setCurrentPlaylistIndex] = useState(0);
+  const [playlistShouldLoop, setPlaylistShouldLoop] = useState(true);
 
   const apiClient = useRef<DisplayApiClient | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
@@ -112,15 +113,36 @@ export default function App() {
           setCurrentPlaylistIndex(0);
           const content = await apiClient.current.getContent(topSchedule.contentId);
           setCurrentContent(content);
+        } else if (topSchedule.playlist?.items && topSchedule.playlist.items.length > 0) {
+          // Playlist with full entity (includes loop setting)
+          const contentIds = topSchedule.playlist.items.map(item => item.contentId);
+          const playlistChanged = JSON.stringify(currentPlaylist) !== JSON.stringify(contentIds);
+
+          if (playlistChanged) {
+            // New playlist - start from beginning
+            console.log('Loading new playlist with', contentIds.length, 'items, loop:', topSchedule.playlist.loop);
+            setCurrentPlaylist(contentIds);
+            setCurrentPlaylistIndex(0);
+            setPlaylistShouldLoop(topSchedule.playlist.loop);
+            const content = await apiClient.current.getContent(contentIds[0]);
+            setCurrentContent(content);
+          } else {
+            // Same playlist - load current index item
+            const index = currentPlaylistIndex % contentIds.length;
+            console.log('Loading playlist item', index + 1, 'of', contentIds.length);
+            const content = await apiClient.current.getContent(contentIds[index]);
+            setCurrentContent(content);
+          }
         } else if (topSchedule.contentIds && topSchedule.contentIds.length > 0) {
-          // Playlist - set or update playlist state
+          // Simple playlist (contentIds array) - always loops
           const playlistChanged = JSON.stringify(currentPlaylist) !== JSON.stringify(topSchedule.contentIds);
 
           if (playlistChanged) {
             // New playlist - start from beginning
-            console.log('Loading new playlist with', topSchedule.contentIds.length, 'items');
+            console.log('Loading new playlist with', topSchedule.contentIds.length, 'items (simple mode, always loops)');
             setCurrentPlaylist(topSchedule.contentIds);
             setCurrentPlaylistIndex(0);
+            setPlaylistShouldLoop(true);
             const content = await apiClient.current.getContent(topSchedule.contentIds[0]);
             setCurrentContent(content);
           } else {
@@ -131,7 +153,7 @@ export default function App() {
             setCurrentContent(content);
           }
         } else {
-          console.error('Schedule has no content or contentIds');
+          console.error('Schedule has no content, contentIds, or playlist');
           setError('Schedule configuration error');
         }
         setError('');
@@ -257,29 +279,41 @@ export default function App() {
   // Handle content completion
   const handleContentComplete = useCallback(() => {
     if (currentPlaylist && currentPlaylist.length > 1) {
-      // Move to next item in playlist
-      const nextIndex = (currentPlaylistIndex + 1) % currentPlaylist.length;
-      console.log('Advancing to next playlist item:', nextIndex + 1, 'of', currentPlaylist.length);
-      setCurrentPlaylistIndex(nextIndex);
+      const isLastItem = currentPlaylistIndex === currentPlaylist.length - 1;
 
-      // Load next content
-      if (apiClient.current) {
-        apiClient.current.getContent(currentPlaylist[nextIndex])
-          .then(content => {
-            setCurrentContent(content);
-            setError('');
-          })
-          .catch(err => {
-            console.error('Failed to load next playlist item:', err);
-            setError('Failed to load content');
-          });
+      // Check if we should advance to next item
+      if (isLastItem && !playlistShouldLoop) {
+        // Last item and no loop - stay on last item or stop
+        console.log('Playlist completed (no loop). Refreshing to check for schedule changes...');
+        getCurrentContent();
+      } else {
+        // Move to next item in playlist (with loop)
+        const nextIndex = playlistShouldLoop
+          ? (currentPlaylistIndex + 1) % currentPlaylist.length
+          : Math.min(currentPlaylistIndex + 1, currentPlaylist.length - 1);
+
+        console.log('Advancing to next playlist item:', nextIndex + 1, 'of', currentPlaylist.length, 'loop:', playlistShouldLoop);
+        setCurrentPlaylistIndex(nextIndex);
+
+        // Load next content
+        if (apiClient.current) {
+          apiClient.current.getContent(currentPlaylist[nextIndex])
+            .then(content => {
+              setCurrentContent(content);
+              setError('');
+            })
+            .catch(err => {
+              console.error('Failed to load next playlist item:', err);
+              setError('Failed to load content');
+            });
+        }
       }
     } else {
       // Single content or end of playlist - refresh to check for schedule changes
       console.log('Content complete, refreshing...');
       getCurrentContent();
     }
-  }, [currentPlaylist, currentPlaylistIndex, getCurrentContent]);
+  }, [currentPlaylist, currentPlaylistIndex, playlistShouldLoop, getCurrentContent]);
 
   if (!configured) {
     return <PairingCodeScreen onPaired={handleConfigured} />;
