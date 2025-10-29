@@ -2,19 +2,57 @@
 
 A production-ready, full-stack digital signage CMS built for Team Submarine operations.
 
-## Quick Start with Docker
+## Getting Started (Linux/Ubuntu)
+
+### Automated Setup
+
+Run this one-liner to set up everything (generates crypto keys, starts containers, seeds database):
+
+```bash
+openssl rand -hex 32 > backend/.env.tmp && echo "ENCRYPTION_KEY=$(cat backend/.env.tmp)" > backend/.env && echo "JWT_SECRET=$(openssl rand -hex 32)" >> backend/.env && rm backend/.env.tmp && docker-compose up -d && sleep 10 && docker-compose exec -T backend npm run seed
+```
+
+### Manual Setup (Step-by-Step)
+
+1. **Generate Crypto Keys**
+   ```bash
+   # Generate encryption key for settings
+   echo "ENCRYPTION_KEY=$(openssl rand -hex 32)" > backend/.env
+
+   # Generate JWT secret
+   echo "JWT_SECRET=$(openssl rand -hex 32)" >> backend/.env
+   ```
+
+2. **Start Docker Containers**
+   ```bash
+   docker-compose up -d
+   ```
+
+3. **Seed Database**
+   ```bash
+   # Wait for containers to be ready (about 10 seconds)
+   sleep 10
+
+   # Seed the database
+   docker-compose exec backend npm run seed
+   ```
+
+### Access the System
+
+- **Admin Portal**: http://localhost:3001
+  - Login: `admin@teamsub.navy.mil` / `Admin123!`
+- **Display Client**: http://localhost:8081
+  - Configure with API key from Admin Portal
+- **Backend API**: http://localhost:3000
+
+## Quick Start with Docker (Other Platforms)
 
 ```bash
 cd TeamSub-TV
 docker-compose up -d
 ```
 
-**Access:**
-- **Admin Portal**: http://localhost:3001
-  - Login: `admin@teamsub.navy.mil` / `Admin123!`
-- **Display Client**: http://localhost:8081
-  - Configure with API key from Admin Portal
-- **Backend API**: http://localhost:3000
+**Note**: You'll need to manually create `backend/.env` with `ENCRYPTION_KEY` and `JWT_SECRET` before starting.
 
 ## System Status
 
@@ -77,17 +115,24 @@ cd frontend-display && npm install
 After starting the containers, seed the database with initial data:
 
 ```bash
-# Seed admin user, settings, and sample content
+# Seed everything (recommended for first-time setup)
 docker-compose exec backend npm run seed
 
-# Alternative: seed from host machine
+# Or seed individually:
+docker-compose exec backend npm run seed:settings   # FPCON and LAN settings
+docker-compose exec backend npm run seed:admin      # Admin user
+docker-compose exec backend npm run seed:content    # Sample content
+docker-compose exec backend npm run seed:schedules  # Sample schedules
+
+# Alternative: seed from host machine (if running locally)
 cd backend && npm run seed
 ```
 
-This creates:
-- Admin user: `admin@teamsub.navy.mil` / `Admin123!`
-- Default FPCON and LAN settings
-- Sample content and schedules
+**What gets created:**
+- **Admin user**: `admin@teamsub.navy.mil` / `Admin123!`
+- **Settings**: Default FPCON (Normal) and LAN (Green) status
+- **Sample content**: Welcome message, announcements, test images
+- **Sample schedules**: Default content rotation schedule
 
 ### Run Locally
 
