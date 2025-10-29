@@ -6,6 +6,7 @@ import { SchedulingService } from './scheduling.service';
 import { SchedulingController } from './scheduling.controller';
 import { ScheduleProcessor } from './processors/schedule.processor';
 import { Display } from '../displays/entities/display.entity';
+import { DisplayGroup } from '../display-groups/entities/display-group.entity';
 import { FlexibleAuthGuard } from '../common/guards/flexible-auth.guard';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { DisplayApiKeyGuard } from '../sse/guards/display-api-key.guard';
@@ -13,7 +14,7 @@ import { EncryptionService } from '../common/services/encryption.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Schedule, Display]),
+    TypeOrmModule.forFeature([Schedule, Display, DisplayGroup]),
     BullModule.registerQueue({
       name: 'content-schedule',
     }),

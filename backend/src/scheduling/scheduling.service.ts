@@ -10,6 +10,7 @@ import { Queue } from 'bullmq';
 import { InjectQueue } from '@nestjs/bullmq';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Schedule } from './entities/schedule.entity';
+import { DisplayGroup } from '../display-groups/entities/display-group.entity';
 import { CreateScheduleDto } from './dto/create-schedule.dto';
 import { UpdateScheduleDto } from './dto/update-schedule.dto';
 import * as cron from 'cron-parser';
@@ -19,6 +20,8 @@ export class SchedulingService implements OnModuleInit {
   constructor(
     @InjectRepository(Schedule)
     private scheduleRepository: Repository<Schedule>,
+    @InjectRepository(DisplayGroup)
+    private displayGroupRepository: Repository<DisplayGroup>,
     @InjectQueue('content-schedule')
     private scheduleQueue: Queue,
     private eventEmitter: EventEmitter2,
@@ -270,6 +273,7 @@ export class SchedulingService implements OnModuleInit {
 
   /**
    * Queue a schedule job
+   * If the schedule targets a group, creates jobs for each display in the group
    */
   private async queueSchedule(schedule: Schedule): Promise<void> {
     const now = new Date();
@@ -279,21 +283,49 @@ export class SchedulingService implements OnModuleInit {
     let delay = startTime.getTime() - now.getTime();
     if (delay < 0) delay = 0; // Already past start time, trigger immediately
 
-    // Add job to queue
-    await this.scheduleQueue.add(
-      'trigger-content',
-      {
-        scheduleId: schedule.id,
-        displayId: schedule.displayId,
-        contentId: schedule.contentId,
-      },
-      {
-        jobId: schedule.id,
-        delay,
-        removeOnComplete: true,
-        removeOnFail: false,
-      },
-    );
+    // If this is a group schedule, queue jobs for each display in the group
+    if (schedule.displayGroupId) {
+      const group = await this.displayGroupRepository.findOne({
+        where: { id: schedule.displayGroupId },
+        relations: ['displays'],
+      });
+
+      if (group && group.displays) {
+        // Create a job for each display in the group
+        for (const display of group.displays) {
+          await this.scheduleQueue.add(
+            'trigger-content',
+            {
+              scheduleId: schedule.id,
+              displayId: display.id,
+              contentId: schedule.contentId,
+            },
+            {
+              jobId: `${schedule.id}-${display.id}`,
+              delay,
+              removeOnComplete: true,
+              removeOnFail: false,
+            },
+          );
+        }
+      }
+    } else {
+      // Single display schedule
+      await this.scheduleQueue.add(
+        'trigger-content',
+        {
+          scheduleId: schedule.id,
+          displayId: schedule.displayId,
+          contentId: schedule.contentId,
+        },
+        {
+          jobId: schedule.id,
+          delay,
+          removeOnComplete: true,
+          removeOnFail: false,
+        },
+      );
+    }
 
     // If recurring, also schedule the next occurrence
     if (schedule.recurrenceRule) {
@@ -303,6 +335,7 @@ export class SchedulingService implements OnModuleInit {
 
   /**
    * Schedule recurring job based on cron expression
+   * If the schedule targets a group, creates recurring jobs for each display
    */
   private async scheduleRecurringJob(schedule: Schedule): Promise<void> {
     if (!schedule.recurrenceRule) return;
@@ -311,23 +344,52 @@ export class SchedulingService implements OnModuleInit {
       const interval = cron.parseExpression(schedule.recurrenceRule);
       const nextRun = interval.next().toDate();
 
-      // Add repeating job
-      await this.scheduleQueue.add(
-        'recurring-content',
-        {
-          scheduleId: schedule.id,
-          displayId: schedule.displayId,
-          contentId: schedule.contentId,
-        },
-        {
-          jobId: `${schedule.id}-recurring`,
-          repeat: {
-            pattern: schedule.recurrenceRule,
+      // If this is a group schedule, create recurring jobs for each display
+      if (schedule.displayGroupId) {
+        const group = await this.displayGroupRepository.findOne({
+          where: { id: schedule.displayGroupId },
+          relations: ['displays'],
+        });
+
+        if (group && group.displays) {
+          for (const display of group.displays) {
+            await this.scheduleQueue.add(
+              'recurring-content',
+              {
+                scheduleId: schedule.id,
+                displayId: display.id,
+                contentId: schedule.contentId,
+              },
+              {
+                jobId: `${schedule.id}-${display.id}-recurring`,
+                repeat: {
+                  pattern: schedule.recurrenceRule,
+                },
+                removeOnComplete: true,
+                removeOnFail: false,
+              },
+            );
+          }
+        }
+      } else {
+        // Single display recurring job
+        await this.scheduleQueue.add(
+          'recurring-content',
+          {
+            scheduleId: schedule.id,
+            displayId: schedule.displayId,
+            contentId: schedule.contentId,
           },
-          removeOnComplete: true,
-          removeOnFail: false,
-        },
-      );
+          {
+            jobId: `${schedule.id}-recurring`,
+            repeat: {
+              pattern: schedule.recurrenceRule,
+            },
+            removeOnComplete: true,
+            removeOnFail: false,
+          },
+        );
+      }
     } catch (error) {
       console.error(`Failed to schedule recurring job for schedule ${schedule.id}:`, error);
     }
@@ -335,19 +397,39 @@ export class SchedulingService implements OnModuleInit {
 
   /**
    * Remove a schedule job from the queue
+   * For group schedules, removes jobs for all displays in the group
    */
   private async removeScheduleJob(scheduleId: string): Promise<void> {
     try {
-      // Remove one-time job
-      const job = await this.scheduleQueue.getJob(scheduleId);
-      if (job) {
-        await job.remove();
-      }
+      const schedule = await this.scheduleRepository.findOne({
+        where: { id: scheduleId },
+        relations: ['displayGroup', 'displayGroup.displays'],
+      });
 
-      // Remove recurring job
-      const recurringJob = await this.scheduleQueue.getJob(`${scheduleId}-recurring`);
-      if (recurringJob) {
-        await recurringJob.remove();
+      if (schedule && schedule.displayGroupId && schedule.displayGroup) {
+        // Group schedule - remove jobs for each display
+        for (const display of schedule.displayGroup.displays || []) {
+          const job = await this.scheduleQueue.getJob(`${scheduleId}-${display.id}`);
+          if (job) {
+            await job.remove();
+          }
+
+          const recurringJob = await this.scheduleQueue.getJob(`${scheduleId}-${display.id}-recurring`);
+          if (recurringJob) {
+            await recurringJob.remove();
+          }
+        }
+      } else {
+        // Single display schedule
+        const job = await this.scheduleQueue.getJob(scheduleId);
+        if (job) {
+          await job.remove();
+        }
+
+        const recurringJob = await this.scheduleQueue.getJob(`${scheduleId}-recurring`);
+        if (recurringJob) {
+          await recurringJob.remove();
+        }
       }
     } catch (error) {
       console.error(`Failed to remove schedule job ${scheduleId}:`, error);
