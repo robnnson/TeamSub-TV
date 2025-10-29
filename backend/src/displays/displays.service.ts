@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Display, DisplayStatus } from './entities/display.entity';
+import { LayoutType } from './types/layout-type.enum';
 import { EncryptionService } from '../common/services/encryption.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
@@ -19,7 +20,7 @@ export class DisplaysService {
     return Math.floor(100000 + Math.random() * 900000).toString();
   }
 
-  async createWithPairingCode(pairingCode: string, name: string, location?: string): Promise<Display> {
+  async createWithPairingCode(pairingCode: string, name: string, location?: string, layoutType?: LayoutType): Promise<Display> {
     // Find unpaired display with this pairing code
     const unpairedDisplay = await this.displaysRepository.findOne({
       where: { pairingCode, apiKeyEncrypted: '' }
@@ -40,6 +41,7 @@ export class DisplaysService {
 
     unpairedDisplay.name = name;
     unpairedDisplay.location = location;
+    if (layoutType !== undefined) unpairedDisplay.layoutType = layoutType;
     unpairedDisplay.apiKeyEncrypted = encrypted.encrypted;
     unpairedDisplay.apiKeyIv = encrypted.iv;
     unpairedDisplay.pairingCode = null;
@@ -159,11 +161,13 @@ export class DisplaysService {
     id: string,
     name?: string,
     location?: string,
+    layoutType?: LayoutType,
   ): Promise<Display> {
     const display = await this.findById(id);
 
     if (name !== undefined) display.name = name;
     if (location !== undefined) display.location = location;
+    if (layoutType !== undefined) display.layoutType = layoutType;
 
     const updated = await this.displaysRepository.save(display);
 
@@ -234,5 +238,33 @@ export class DisplaysService {
       .where('lastSeen < :fiveMinutesAgo', { fiveMinutesAgo })
       .andWhere('status = :online', { online: DisplayStatus.ONLINE })
       .execute();
+
+    // Clean up expired unpaired displays (run cleanup periodically)
+    await this.cleanupExpiredUnpairedDisplays();
+  }
+
+  // Clean up expired unpaired displays
+  async cleanupExpiredUnpairedDisplays(): Promise<number> {
+    const result = await this.displaysRepository
+      .createQueryBuilder()
+      .delete()
+      .from(Display)
+      .where('apiKeyEncrypted = :empty', { empty: '' })
+      .andWhere('pairingCodeExpiry < :now', { now: new Date() })
+      .execute();
+
+    return result.affected || 0;
+  }
+
+  // Toggle debug overlay on display
+  async toggleDebugOverlay(displayId: string, enabled: boolean): Promise<void> {
+    const display = await this.findById(displayId);
+
+    // Emit event to trigger debug overlay via SSE
+    this.eventEmitter.emit('display.debug', {
+      displayId: display.id,
+      enabled,
+      timestamp: new Date().toISOString(),
+    });
   }
 }

@@ -31,9 +31,10 @@ export default function ErrorScreen({ displayName, displayLocation, error }: Err
           src={logoImage}
           alt="Team Sub TV"
           style={{
+            display: 'block',
             maxWidth: '400px',
             maxHeight: '150px',
-            marginBottom: '20px',
+            margin: '0 auto 20px auto',
             filter: 'drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3))',
           }}
         />

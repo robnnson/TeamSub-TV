@@ -60,6 +60,7 @@ export class DisplaysController {
         createDisplayDto.pairingCode,
         createDisplayDto.name,
         createDisplayDto.location,
+        createDisplayDto.layoutType,
       );
     }
 
@@ -92,6 +93,7 @@ export class DisplaysController {
       id,
       updateDisplayDto.name,
       updateDisplayDto.location,
+      updateDisplayDto.layoutType,
     );
   }
 
@@ -111,6 +113,14 @@ export class DisplaysController {
     }
     await this.displaysService.heartbeat(id);
     return { message: 'Heartbeat recorded', timestamp: new Date() };
+  }
+
+  @Post(':id/debug')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async toggleDebug(@Param('id') id: string, @Body() body: { enabled: boolean }) {
+    await this.displaysService.toggleDebugOverlay(id, body.enabled);
+    return { message: 'Debug overlay toggled', enabled: body.enabled };
   }
 
   @Delete(':id')

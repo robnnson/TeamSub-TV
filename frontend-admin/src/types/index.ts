@@ -41,6 +41,7 @@ export interface Content {
 
 // Display types
 export type DisplayStatus = 'online' | 'offline';
+export type LayoutType = 'standard' | 'weather';
 
 export interface Display {
   id: string;
@@ -50,6 +51,7 @@ export interface Display {
   apiKeyIv: string;
   lastSeen: string | null;
   status: DisplayStatus;
+  layoutType?: LayoutType | null;
   createdAt: string;
   updatedAt: string;
   apiKey?: string; // Only present on creation
@@ -61,6 +63,7 @@ export interface DisplayGroup {
   id: string;
   name: string;
   description: string | null;
+  layoutType?: LayoutType | null;
   displays: Display[];
   createdAt: string;
   updatedAt: string;

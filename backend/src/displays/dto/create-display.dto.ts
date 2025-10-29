@@ -1,4 +1,5 @@
-import { IsString, IsOptional } from 'class-validator';
+import { IsString, IsOptional, IsEnum } from 'class-validator';
+import { LayoutType } from '../types/layout-type.enum';
 
 export class CreateDisplayDto {
   @IsString()
@@ -11,4 +12,8 @@ export class CreateDisplayDto {
   @IsString()
   @IsOptional()
   pairingCode?: string;
+
+  @IsEnum(LayoutType)
+  @IsOptional()
+  layoutType?: LayoutType;
 }

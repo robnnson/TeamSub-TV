@@ -166,7 +166,7 @@ class ApiClient {
     return data;
   }
 
-  async createTextContent(contentData: { title: string; textContent: string; duration?: number }): Promise<Content> {
+  async createTextContent(contentData: { title: string; textContent: string; duration?: number; metadata?: any }): Promise<Content> {
     const { data } = await this.client.post<Content>('/content/text', contentData);
     return data;
   }
@@ -210,7 +210,7 @@ class ApiClient {
     return data;
   }
 
-  async createDisplay(displayData: { name: string; location: string; pairingCode?: string }): Promise<Display> {
+  async createDisplay(displayData: { name: string; location: string; pairingCode?: string; layoutType?: 'standard' | 'weather' }): Promise<Display> {
     const { data } = await this.client.post<Display>('/displays', displayData);
     return data;
   }
@@ -223,6 +223,10 @@ class ApiClient {
   async regenerateDisplayKey(id: string): Promise<{ apiKey: string }> {
     const { data } = await this.client.post<{ apiKey: string }>(`/displays/${id}/regenerate-key`);
     return data;
+  }
+
+  async toggleDisplayDebug(id: string, enabled: boolean): Promise<void> {
+    await this.client.post(`/displays/${id}/debug`, { enabled });
   }
 
   async deleteDisplay(id: string): Promise<void> {
@@ -249,6 +253,7 @@ class ApiClient {
     name: string;
     description?: string;
     displayIds?: string[];
+    layoutType?: 'standard' | 'weather';
   }): Promise<DisplayGroup> {
     const { data } = await this.client.post<DisplayGroup>('/display-groups', groupData);
     return data;
@@ -260,6 +265,7 @@ class ApiClient {
       name?: string;
       description?: string;
       displayIds?: string[];
+      layoutType?: 'standard' | 'weather';
     }
   ): Promise<DisplayGroup> {
     const { data } = await this.client.patch<DisplayGroup>(`/display-groups/${id}`, groupData);

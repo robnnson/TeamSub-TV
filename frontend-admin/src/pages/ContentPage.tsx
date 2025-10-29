@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { FileText, Image, Video, List, Upload, Trash2, X, Edit } from 'lucide-react';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 import { api } from '../lib/api';
 import type { Content, ContentType } from '../types';
 
@@ -235,8 +237,20 @@ function EditModal({ content, onClose, onSuccess }: { content: Content; onClose:
   const [title, setTitle] = useState(content.title);
   const [duration, setDuration] = useState(content.duration);
   const [textContent, setTextContent] = useState(content.textContent || '');
+  const [backgroundColor, setBackgroundColor] = useState(content.metadata?.backgroundColor || '#FFFFFF');
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState('');
+
+  const quillModules = {
+    toolbar: [
+      [{ 'header': [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ 'color': [] }, { 'background': [] }],
+      [{ 'align': [] }],
+      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      ['clean']
+    ],
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -249,7 +263,10 @@ function EditModal({ content, onClose, onSuccess }: { content: Content; onClose:
       await api.updateContent(content.id, {
         title,
         duration,
-        ...(content.type === 'text' && { textContent }),
+        ...(content.type === 'text' && {
+          textContent,
+          metadata: { ...content.metadata, backgroundColor }
+        }),
       });
 
       onSuccess();
@@ -260,9 +277,20 @@ function EditModal({ content, onClose, onSuccess }: { content: Content; onClose:
     }
   };
 
+  const colorPresets = [
+    { name: 'White', value: '#FFFFFF' },
+    { name: 'Light Blue', value: '#E3F2FD' },
+    { name: 'Light Green', value: '#E8F5E9' },
+    { name: 'Light Yellow', value: '#FFF9C4' },
+    { name: 'Light Orange', value: '#FFE0B2' },
+    { name: 'Light Red', value: '#FFEBEE' },
+    { name: 'Light Purple', value: '#F3E5F5' },
+    { name: 'Light Gray', value: '#F5F5F5' },
+  ];
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
+      <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-3xl my-8">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-gray-900">Edit Content</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
@@ -300,18 +328,64 @@ function EditModal({ content, onClose, onSuccess }: { content: Content; onClose:
             </div>
 
             {content.type === 'text' && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Text Content
-                </label>
-                <textarea
-                  value={textContent}
-                  onChange={(e) => setTextContent(e.target.value)}
-                  className="input w-full"
-                  rows={6}
-                  required
-                />
-              </div>
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Background Color
+                  </label>
+                  <div className="flex gap-2 mb-2">
+                    {colorPresets.map((preset) => (
+                      <button
+                        key={preset.value}
+                        type="button"
+                        onClick={() => setBackgroundColor(preset.value)}
+                        className={`w-10 h-10 rounded border-2 ${
+                          backgroundColor === preset.value ? 'border-blue-500' : 'border-gray-300'
+                        }`}
+                        style={{ backgroundColor: preset.value }}
+                        title={preset.name}
+                      />
+                    ))}
+                  </div>
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="color"
+                      value={backgroundColor}
+                      onChange={(e) => setBackgroundColor(e.target.value)}
+                      className="h-10 w-20 rounded border border-gray-300 cursor-pointer"
+                    />
+                    <input
+                      type="text"
+                      value={backgroundColor}
+                      onChange={(e) => setBackgroundColor(e.target.value)}
+                      className="input flex-1"
+                      placeholder="#FFFFFF"
+                      pattern="^#[0-9A-Fa-f]{6}$"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Choose a preset or use custom color (for urgency: red/orange for important, yellow for caution)
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Text Content
+                  </label>
+                  <div className="border border-gray-300 rounded">
+                    <ReactQuill
+                      theme="snow"
+                      value={textContent}
+                      onChange={setTextContent}
+                      modules={quillModules}
+                      style={{ height: '200px', marginBottom: '42px' }}
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Use the toolbar to format text, change colors, and add structure
+                  </p>
+                </div>
+              </>
             )}
 
             <div className="bg-gray-50 border border-gray-200 rounded px-3 py-2 text-sm text-gray-600">
@@ -475,8 +549,20 @@ function TextModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () 
   const [title, setTitle] = useState('');
   const [textContent, setTextContent] = useState('');
   const [duration, setDuration] = useState(30);
+  const [backgroundColor, setBackgroundColor] = useState('#FFFFFF');
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
+
+  const quillModules = {
+    toolbar: [
+      [{ 'header': [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ 'color': [] }, { 'background': [] }],
+      [{ 'align': [] }],
+      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      ['clean']
+    ],
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -484,7 +570,12 @@ function TextModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () 
     try {
       setCreating(true);
       setError('');
-      await api.createTextContent({ title, textContent, duration });
+      await api.createTextContent({
+        title,
+        textContent,
+        duration,
+        metadata: { backgroundColor }
+      });
       onSuccess();
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to create text content');
@@ -493,9 +584,20 @@ function TextModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () 
     }
   };
 
+  const colorPresets = [
+    { name: 'White', value: '#FFFFFF' },
+    { name: 'Light Blue', value: '#E3F2FD' },
+    { name: 'Light Green', value: '#E8F5E9' },
+    { name: 'Light Yellow', value: '#FFF9C4' },
+    { name: 'Light Orange', value: '#FFE0B2' },
+    { name: 'Light Red', value: '#FFEBEE' },
+    { name: 'Light Purple', value: '#F3E5F5' },
+    { name: 'Light Gray', value: '#F5F5F5' },
+  ];
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
+      <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-3xl my-8">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-gray-900">Create Text Content</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
@@ -520,15 +622,59 @@ function TextModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () 
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
+                Background Color
+              </label>
+              <div className="flex gap-2 mb-2">
+                {colorPresets.map((preset) => (
+                  <button
+                    key={preset.value}
+                    type="button"
+                    onClick={() => setBackgroundColor(preset.value)}
+                    className={`w-10 h-10 rounded border-2 ${
+                      backgroundColor === preset.value ? 'border-blue-500' : 'border-gray-300'
+                    }`}
+                    style={{ backgroundColor: preset.value }}
+                    title={preset.name}
+                  />
+                ))}
+              </div>
+              <div className="flex gap-2 items-center">
+                <input
+                  type="color"
+                  value={backgroundColor}
+                  onChange={(e) => setBackgroundColor(e.target.value)}
+                  className="h-10 w-20 rounded border border-gray-300 cursor-pointer"
+                />
+                <input
+                  type="text"
+                  value={backgroundColor}
+                  onChange={(e) => setBackgroundColor(e.target.value)}
+                  className="input flex-1"
+                  placeholder="#FFFFFF"
+                  pattern="^#[0-9A-Fa-f]{6}$"
+                />
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Choose a preset or use custom color (for urgency: red/orange for important, yellow for caution)
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Text Content
               </label>
-              <textarea
-                value={textContent}
-                onChange={(e) => setTextContent(e.target.value)}
-                className="input w-full"
-                rows={6}
-                required
-              />
+              <div className="border border-gray-300 rounded">
+                <ReactQuill
+                  theme="snow"
+                  value={textContent}
+                  onChange={setTextContent}
+                  modules={quillModules}
+                  style={{ height: '200px', marginBottom: '42px' }}
+                />
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Use the toolbar to format text, change colors, and add structure
+              </p>
             </div>
 
             <div>

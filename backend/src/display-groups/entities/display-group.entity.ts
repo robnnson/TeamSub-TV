@@ -8,6 +8,7 @@ import {
   JoinTable,
 } from 'typeorm';
 import { Display } from '../../displays/entities/display.entity';
+import { LayoutType } from '../../displays/types/layout-type.enum';
 
 @Entity('display_groups')
 export class DisplayGroup {
@@ -19,6 +20,14 @@ export class DisplayGroup {
 
   @Column({ type: 'text', nullable: true })
   description: string;
+
+  @Column({
+    type: 'enum',
+    enum: LayoutType,
+    default: LayoutType.STANDARD,
+    nullable: true,
+  })
+  layoutType: LayoutType;
 
   @ManyToMany(() => Display, (display) => display.groups, {
     cascade: true,

@@ -7,6 +7,7 @@ import {
   ManyToMany,
 } from 'typeorm';
 import { DisplayGroup } from '../../display-groups/entities/display-group.entity';
+import { LayoutType } from '../types/layout-type.enum';
 
 export enum DisplayStatus {
   ONLINE = 'online',
@@ -23,6 +24,14 @@ export class Display {
 
   @Column({ nullable: true })
   location: string;
+
+  @Column({
+    type: 'enum',
+    enum: LayoutType,
+    default: LayoutType.STANDARD,
+    nullable: true,
+  })
+  layoutType: LayoutType;
 
   @Column({ type: 'text' })
   apiKeyEncrypted: string;

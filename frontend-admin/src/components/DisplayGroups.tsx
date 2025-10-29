@@ -13,6 +13,7 @@ export default function DisplayGroups() {
     name: '',
     description: '',
     displayIds: [] as string[],
+    layoutType: 'standard' as 'standard' | 'weather',
   });
 
   useEffect(() => {
@@ -44,7 +45,7 @@ export default function DisplayGroups() {
 
   const handleCreate = () => {
     setEditingGroup(null);
-    setFormData({ name: '', description: '', displayIds: [] });
+    setFormData({ name: '', description: '', displayIds: [], layoutType: 'standard' });
     setShowCreateModal(true);
   };
 
@@ -54,6 +55,7 @@ export default function DisplayGroups() {
       name: group.name,
       description: group.description || '',
       displayIds: group.displays.map(d => d.id),
+      layoutType: group.layoutType || 'standard',
     });
     setShowCreateModal(true);
   };
@@ -219,6 +221,23 @@ export default function DisplayGroups() {
                     className="w-full border rounded px-3 py-2"
                     rows={3}
                   />
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-1">
+                    Layout Type
+                  </label>
+                  <select
+                    value={formData.layoutType}
+                    onChange={(e) => setFormData({ ...formData, layoutType: e.target.value as 'standard' | 'weather' })}
+                    className="w-full border rounded px-3 py-2"
+                  >
+                    <option value="standard">Standard Layout</option>
+                    <option value="weather">Weather-Focused Layout</option>
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Individual displays can override group layout setting
+                  </p>
                 </div>
 
                 <div className="mb-6">

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Monitor, Plus, Trash2, Key, Circle, X, Copy, Check } from 'lucide-react';
+import { Monitor, Plus, Trash2, Key, Circle, X, Copy, Check, Edit, Bug } from 'lucide-react';
 import { api } from '../lib/api';
 import type { Display } from '../types';
 
@@ -8,6 +8,8 @@ export default function DisplaysPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [editingDisplay, setEditingDisplay] = useState<Display | null>(null);
+  const [debugEnabledDisplays, setDebugEnabledDisplays] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     loadDisplays();
@@ -34,6 +36,27 @@ export default function DisplaysPage() {
       await loadDisplays();
     } catch (err: any) {
       alert(err.response?.data?.message || 'Failed to delete display');
+    }
+  };
+
+  const handleToggleDebug = async (id: string, name: string) => {
+    try {
+      const isEnabled = debugEnabledDisplays.has(id);
+      await api.toggleDisplayDebug(id, !isEnabled);
+
+      if (isEnabled) {
+        setDebugEnabledDisplays(prev => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+        alert(`Debug overlay disabled on "${name}"`);
+      } else {
+        setDebugEnabledDisplays(prev => new Set(prev).add(id));
+        alert(`Debug overlay enabled on "${name}"`);
+      }
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to toggle debug overlay');
     }
   };
 
@@ -135,15 +158,40 @@ export default function DisplaysPage() {
                     {new Date(display.createdAt).toLocaleDateString()}
                   </span>
                 </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Layout:</span>
+                  <span className="text-gray-900">
+                    {display.layoutType === 'weather' ? 'Weather-Focused' : 'Standard'}
+                  </span>
+                </div>
               </div>
 
               <div className="flex gap-2 pt-3 border-t border-gray-200">
+                <button
+                  onClick={() => setEditingDisplay(display)}
+                  className="flex-1 btn btn-secondary text-sm py-1.5 flex items-center justify-center gap-1"
+                >
+                  <Edit className="w-3.5 h-3.5" />
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleToggleDebug(display.id, display.name)}
+                  className={`flex-1 text-sm py-1.5 flex items-center justify-center gap-1 ${
+                    debugEnabledDisplays.has(display.id)
+                      ? 'bg-green-600 hover:bg-green-700 text-white'
+                      : 'btn btn-secondary'
+                  }`}
+                  title={debugEnabledDisplays.has(display.id) ? "Hide debug overlay" : "Show debug overlay on display"}
+                >
+                  <Bug className="w-3.5 h-3.5" />
+                  {debugEnabledDisplays.has(display.id) ? 'Debug On' : 'Debug'}
+                </button>
                 <button
                   onClick={() => handleRegenerateKey(display.id, display.name)}
                   className="flex-1 btn btn-secondary text-sm py-1.5 flex items-center justify-center gap-1"
                 >
                   <Key className="w-3.5 h-3.5" />
-                  New Key
+                  Key
                 </button>
                 <button
                   onClick={() => handleDeleteDisplay(display.id, display.name)}
@@ -166,6 +214,17 @@ export default function DisplaysPage() {
           }}
         />
       )}
+
+      {editingDisplay && (
+        <EditModal
+          display={editingDisplay}
+          onClose={() => setEditingDisplay(null)}
+          onSuccess={() => {
+            setEditingDisplay(null);
+            loadDisplays();
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -174,6 +233,7 @@ function RegisterModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
   const [name, setName] = useState('');
   const [location, setLocation] = useState('');
   const [pairingCode, setPairingCode] = useState('');
+  const [layoutType, setLayoutType] = useState<'standard' | 'weather'>('standard');
   const [registering, setRegistering] = useState(false);
   const [error, setError] = useState('');
   const [apiKey, setApiKey] = useState<string | null>(null);
@@ -185,7 +245,7 @@ function RegisterModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
     try {
       setRegistering(true);
       setError('');
-      const result = await api.createDisplay({ name, location, pairingCode });
+      const result = await api.createDisplay({ name, location, pairingCode, layoutType });
       setApiKey(result.apiKey || null);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to register display');
@@ -315,6 +375,23 @@ function RegisterModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
               />
             </div>
 
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Layout Type
+              </label>
+              <select
+                value={layoutType}
+                onChange={(e) => setLayoutType(e.target.value as 'standard' | 'weather')}
+                className="input w-full"
+              >
+                <option value="standard">Standard Layout</option>
+                <option value="weather">Weather-Focused Layout</option>
+              </select>
+              <p className="text-xs text-gray-500 mt-1">
+                Weather layout shows current conditions and 5-day forecast
+              </p>
+            </div>
+
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded text-sm">
                 {error}
@@ -336,6 +413,114 @@ function RegisterModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
                 disabled={registering}
               >
                 {registering ? 'Registering...' : 'Register'}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function EditModal({ display, onClose, onSuccess }: { display: Display; onClose: () => void; onSuccess: () => void }) {
+  const [name, setName] = useState(display.name);
+  const [location, setLocation] = useState(display.location || '');
+  const [layoutType, setLayoutType] = useState<'standard' | 'weather'>(display.layoutType || 'standard');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      setSaving(true);
+      setError('');
+      await api.updateDisplay(display.id, { name, location, layoutType });
+      onSuccess();
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to update display');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold text-gray-900">Edit Display</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Display Name *
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g., Lobby Display 1"
+                className="input w-full"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Location
+              </label>
+              <input
+                type="text"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="e.g., Main Lobby, Building A"
+                className="input w-full"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Layout Type
+              </label>
+              <select
+                value={layoutType}
+                onChange={(e) => setLayoutType(e.target.value as 'standard' | 'weather')}
+                className="input w-full"
+              >
+                <option value="standard">Standard Layout</option>
+                <option value="weather">Weather-Focused Layout</option>
+              </select>
+              <p className="text-xs text-gray-500 mt-1">
+                Weather layout shows current conditions and 5-day forecast
+              </p>
+            </div>
+
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded text-sm">
+                {error}
+              </div>
+            )}
+
+            <div className="flex gap-2 justify-end">
+              <button
+                type="button"
+                onClick={onClose}
+                className="btn btn-secondary"
+                disabled={saving}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={saving}
+              >
+                {saving ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
           </div>

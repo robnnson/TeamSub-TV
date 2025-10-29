@@ -34,7 +34,7 @@ export class SseService {
    */
   addClient(clientId: string, reply: FastifyReply, displayId?: string): void {
     // Set up SSE headers
-    reply.headers({
+    reply.raw.writeHead(200, {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
       'Connection': 'keep-alive',
@@ -291,6 +291,19 @@ export class SseService {
   handleScheduleChange(payload: any) {
     this.logger.log(`Schedule change detected: ${JSON.stringify(payload)}`);
     this.broadcast('schedule.changed', {
+      ...payload,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  /**
+   * Listen for debug overlay toggle
+   */
+  @OnEvent('display.debug')
+  handleDebugToggle(payload: any) {
+    const { displayId, enabled } = payload;
+    this.logger.log(`Debug overlay ${enabled ? 'enabled' : 'disabled'} for display ${displayId}`);
+    this.broadcastToDisplay(displayId, 'debug.toggle', {
       ...payload,
       timestamp: new Date().toISOString(),
     });

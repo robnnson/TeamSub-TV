@@ -43,10 +43,13 @@ export interface Schedule {
   content?: Content;
 }
 
+export type LayoutType = 'standard' | 'weather';
+
 export interface Display {
   id: string;
   name: string;
   location: string;
+  layoutType?: LayoutType | null;
   lastSeen: string | null;
   status: 'online' | 'offline';
   createdAt: string;

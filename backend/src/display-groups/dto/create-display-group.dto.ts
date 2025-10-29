@@ -1,4 +1,5 @@
-import { IsString, IsOptional, IsArray, IsUUID } from 'class-validator';
+import { IsString, IsOptional, IsArray, IsUUID, IsEnum } from 'class-validator';
+import { LayoutType } from '../../displays/types/layout-type.enum';
 
 export class CreateDisplayGroupDto {
   @IsString()
@@ -12,4 +13,8 @@ export class CreateDisplayGroupDto {
   @IsArray()
   @IsUUID('4', { each: true })
   displayIds?: string[];
+
+  @IsEnum(LayoutType)
+  @IsOptional()
+  layoutType?: LayoutType;
 }

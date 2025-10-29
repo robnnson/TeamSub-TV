@@ -4,6 +4,8 @@ import PairingCodeScreen from './components/PairingCodeScreen';
 import ContentRenderer from './components/ContentRenderer';
 import ErrorScreen from './components/ErrorScreen';
 import Shell from './components/Shell';
+import WeatherShell from './components/WeatherShell';
+import DebugOverlay from './components/DebugOverlay';
 import type { Content, Schedule, Display } from './types';
 
 const API_URL = '/api';
@@ -17,9 +19,10 @@ export default function App() {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [showDebugOverlay, setShowDebugOverlay] = useState(false);
 
   // Playlist state
-  const [currentPlaylist, setCurrentPlaylist] = useState<string[] | null>(null);
+  const [currentPlaylist, setCurrentPlaylist] = useState<{ contentId: string; durationOverride: number | null }[] | null>(null);
   const [currentPlaylistIndex, setCurrentPlaylistIndex] = useState(0);
   const [playlistShouldLoop, setPlaylistShouldLoop] = useState(true);
 
@@ -114,43 +117,60 @@ export default function App() {
           const content = await apiClient.current.getContent(topSchedule.contentId);
           setCurrentContent(content);
         } else if (topSchedule.playlist?.items && topSchedule.playlist.items.length > 0) {
-          // Playlist with full entity (includes loop setting)
-          const contentIds = topSchedule.playlist.items.map(item => item.contentId);
-          const playlistChanged = JSON.stringify(currentPlaylist) !== JSON.stringify(contentIds);
+          // Playlist with full entity (includes loop setting and duration overrides)
+          const playlistItems = topSchedule.playlist.items.map(item => ({
+            contentId: item.contentId,
+            durationOverride: item.durationOverride
+          }));
+          const playlistChanged = JSON.stringify(currentPlaylist) !== JSON.stringify(playlistItems);
 
           if (playlistChanged) {
             // New playlist - start from beginning
-            console.log('[PLAYLIST] Loading new playlist with', contentIds.length, 'items, loop:', topSchedule.playlist.loop);
+            console.log('[PLAYLIST] Loading new playlist with', playlistItems.length, 'items, loop:', topSchedule.playlist.loop);
             console.log('[PLAYLIST] Playlist name:', topSchedule.playlist.name);
-            setCurrentPlaylist(contentIds);
+            setCurrentPlaylist(playlistItems);
             setCurrentPlaylistIndex(0);
             setPlaylistShouldLoop(topSchedule.playlist.loop);
-            const content = await apiClient.current.getContent(contentIds[0]);
+            const content = await apiClient.current.getContent(playlistItems[0].contentId);
+            // Apply duration override if present
+            if (playlistItems[0].durationOverride) {
+              content.duration = playlistItems[0].durationOverride;
+              console.log('[PLAYLIST] Applied duration override:', playlistItems[0].durationOverride, 'seconds');
+            }
             setCurrentContent(content);
           } else {
             // Same playlist - load current index item
-            const index = currentPlaylistIndex % contentIds.length;
-            console.log('[PLAYLIST] Loading playlist item', index + 1, 'of', contentIds.length);
-            const content = await apiClient.current.getContent(contentIds[index]);
+            const index = currentPlaylistIndex % playlistItems.length;
+            console.log('[PLAYLIST] Loading playlist item', index + 1, 'of', playlistItems.length);
+            const content = await apiClient.current.getContent(playlistItems[index].contentId);
+            // Apply duration override if present
+            if (playlistItems[index].durationOverride) {
+              content.duration = playlistItems[index].durationOverride;
+              console.log('[PLAYLIST] Applied duration override:', playlistItems[index].durationOverride, 'seconds');
+            }
             setCurrentContent(content);
           }
         } else if (topSchedule.contentIds && topSchedule.contentIds.length > 0) {
-          // Simple playlist (contentIds array) - always loops
-          const playlistChanged = JSON.stringify(currentPlaylist) !== JSON.stringify(topSchedule.contentIds);
+          // Simple playlist (contentIds array) - always loops, no duration overrides
+          const playlistItems = topSchedule.contentIds.map(contentId => ({
+            contentId,
+            durationOverride: null
+          }));
+          const playlistChanged = JSON.stringify(currentPlaylist) !== JSON.stringify(playlistItems);
 
           if (playlistChanged) {
             // New playlist - start from beginning
-            console.log('[PLAYLIST] Loading new playlist with', topSchedule.contentIds.length, 'items (simple mode, always loops)');
-            setCurrentPlaylist(topSchedule.contentIds);
+            console.log('[PLAYLIST] Loading new playlist with', playlistItems.length, 'items (simple mode, always loops)');
+            setCurrentPlaylist(playlistItems);
             setCurrentPlaylistIndex(0);
             setPlaylistShouldLoop(true);
-            const content = await apiClient.current.getContent(topSchedule.contentIds[0]);
+            const content = await apiClient.current.getContent(playlistItems[0].contentId);
             setCurrentContent(content);
           } else {
             // Same playlist - load current index item
-            const index = currentPlaylistIndex % topSchedule.contentIds.length;
-            console.log('[PLAYLIST] Loading playlist item', index + 1, 'of', topSchedule.contentIds.length);
-            const content = await apiClient.current.getContent(topSchedule.contentIds[index]);
+            const index = currentPlaylistIndex % playlistItems.length;
+            console.log('[PLAYLIST] Loading playlist item', index + 1, 'of', playlistItems.length);
+            const content = await apiClient.current.getContent(playlistItems[index].contentId);
             setCurrentContent(content);
           }
         } else {
@@ -215,6 +235,12 @@ export default function App() {
 
         eventSource.addEventListener('heartbeat', () => {
           // Keep-alive heartbeat from server
+        });
+
+        eventSource.addEventListener('debug.toggle', (e) => {
+          const data = JSON.parse((e as MessageEvent).data);
+          console.log('Debug toggle event received:', data);
+          setShowDebugOverlay(data.enabled);
         });
 
         eventSource.onerror = (err) => {
@@ -307,8 +333,13 @@ export default function App() {
 
         // Load next content
         if (apiClient.current) {
-          apiClient.current.getContent(currentPlaylist[nextIndex])
+          apiClient.current.getContent(currentPlaylist[nextIndex].contentId)
             .then(content => {
+              // Apply duration override if present
+              if (currentPlaylist[nextIndex].durationOverride) {
+                content.duration = currentPlaylist[nextIndex].durationOverride;
+                console.log('[PLAYLIST] Applied duration override:', currentPlaylist[nextIndex].durationOverride, 'seconds');
+              }
               setCurrentContent(content);
               setError('');
             })
@@ -324,6 +355,7 @@ export default function App() {
       getCurrentContent();
     }
   }, [currentPlaylist, currentPlaylistIndex, playlistShouldLoop, getCurrentContent]);
+
 
   if (!configured) {
     return <PairingCodeScreen onPaired={handleConfigured} />;
@@ -347,33 +379,46 @@ export default function App() {
     );
   }
 
+  // Determine which Shell to use based on layoutType
+  const ShellComponent = display?.layoutType === 'weather' ? WeatherShell : Shell;
+
   // Always show Shell, with content inside or welcome message
   return (
-    <Shell
-      displayName={display?.name}
-      displayLocation={display?.location}
-      eventSource={eventSourceRef.current}
-    >
-      {currentContent ? (
-        <ContentRenderer
-          content={currentContent}
-          apiUrl={API_URL}
-          apiKey={localStorage.getItem('display_api_key') || undefined}
-          onComplete={handleContentComplete}
+    <>
+      <ShellComponent
+        displayName={display?.name}
+        displayLocation={display?.location}
+        eventSource={eventSourceRef.current}
+      >
+        {currentContent ? (
+          <ContentRenderer
+            content={currentContent}
+            apiUrl={API_URL}
+            apiKey={localStorage.getItem('display_api_key') || undefined}
+            onComplete={handleContentComplete}
+          />
+        ) : (
+          <div className="text-center" style={{ color: '#999' }}>
+            <div className="text-4xl mb-4">Welcome to the building</div>
+            <div className="text-xl">
+              {display ? `${display.name} - ${display.location}` : 'Waiting for content...'}
+            </div>
+            <div className="text-sm mt-4">
+              {schedules.length === 0
+                ? 'No schedules configured'
+                : 'No active content at this time'}
+            </div>
+          </div>
+        )}
+      </ShellComponent>
+
+      {showDebugOverlay && (
+        <DebugOverlay
+          display={display}
+          schedules={schedules}
+          currentContent={currentContent}
         />
-      ) : (
-        <div className="text-center" style={{ color: '#999' }}>
-          <div className="text-4xl mb-4">Welcome to the building</div>
-          <div className="text-xl">
-            {display ? `${display.name} - ${display.location}` : 'Waiting for content...'}
-          </div>
-          <div className="text-sm mt-4">
-            {schedules.length === 0
-              ? 'No schedules configured'
-              : 'No active content at this time'}
-          </div>
-        </div>
       )}
-    </Shell>
+    </>
   );
 }

@@ -105,9 +105,10 @@ export default function ContentRenderer({ content, apiUrl, apiKey, onComplete }:
       );
 
     case 'text':
-      const bgColor = content.metadata?.backgroundColor || 'transparent';
-      const textColor = content.metadata?.textColor || '#333333';
-      const fontSize = content.metadata?.fontSize || '3rem';
+      const bgColor = content.metadata?.backgroundColor || '#FFFFFF';
+
+      // Check if content is HTML (from rich text editor)
+      const isHtml = content.textContent?.includes('<p>') || content.textContent?.includes('<h');
 
       return (
         <div
@@ -118,13 +119,32 @@ export default function ContentRenderer({ content, apiUrl, apiKey, onComplete }:
             alignItems: 'center',
             justifyContent: 'center',
             backgroundColor: bgColor,
-            color: textColor,
-            fontSize,
-            padding: '2rem',
-            textAlign: 'center',
+            padding: '3rem',
+            overflow: 'auto',
           }}
         >
-          {content.textContent}
+          {isHtml ? (
+            <div
+              dangerouslySetInnerHTML={{ __html: content.textContent || '' }}
+              style={{
+                fontSize: '2.5rem',
+                lineHeight: '1.6',
+                maxWidth: '100%',
+                width: '100%',
+              }}
+              className="rich-text-content"
+            />
+          ) : (
+            <div
+              style={{
+                fontSize: '3rem',
+                textAlign: 'center',
+                color: '#333333',
+              }}
+            >
+              {content.textContent}
+            </div>
+          )}
         </div>
       );
 
