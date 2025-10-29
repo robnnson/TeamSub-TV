@@ -22,18 +22,20 @@ This script will:
 
 **Alternative one-liner** (if you prefer not to use the script):
 ```bash
-openssl rand -hex 32 > backend/.env.tmp && echo "ENCRYPTION_KEY=$(cat backend/.env.tmp)" > backend/.env && echo "JWT_SECRET=$(openssl rand -hex 32)" >> backend/.env && rm backend/.env.tmp && docker-compose up -d && sleep 15 && docker-compose exec -T backend npm run seed
+cp .env.example .env && sed -i "s/your-jwt-secret-here-replace-with-random-string/$(openssl rand -hex 32)/" .env && sed -i "s/your-jwt-refresh-secret-here-replace-with-random-string/$(openssl rand -hex 32)/" .env && sed -i "s/your-encryption-key-here-replace-with-random-string/$(openssl rand -hex 32)/" .env && docker-compose up -d && sleep 15 && docker-compose exec -T backend npm run seed
 ```
 
 ### Manual Setup (Step-by-Step)
 
-1. **Generate Crypto Keys**
+1. **Create Environment File**
    ```bash
-   # Generate encryption key for settings
-   echo "ENCRYPTION_KEY=$(openssl rand -hex 32)" > backend/.env
+   # Copy the example file
+   cp .env.example .env
 
-   # Generate JWT secret
-   echo "JWT_SECRET=$(openssl rand -hex 32)" >> backend/.env
+   # Generate secure keys and update .env
+   sed -i "s/your-jwt-secret-here-replace-with-random-string/$(openssl rand -hex 32)/" .env
+   sed -i "s/your-jwt-refresh-secret-here-replace-with-random-string/$(openssl rand -hex 32)/" .env
+   sed -i "s/your-encryption-key-here-replace-with-random-string/$(openssl rand -hex 32)/" .env
    ```
 
 2. **Start Docker Containers**
@@ -43,12 +45,14 @@ openssl rand -hex 32 > backend/.env.tmp && echo "ENCRYPTION_KEY=$(cat backend/.e
 
 3. **Seed Database**
    ```bash
-   # Wait for containers to be ready (about 10 seconds)
-   sleep 10
+   # Wait for containers to be ready (about 15 seconds)
+   sleep 15
 
    # Seed the database
    docker-compose exec backend npm run seed
    ```
+
+**Note**: The `.env` file should be in the **root directory**, not in the `backend/` folder. Docker Compose reads environment variables from the root `.env` file.
 
 ### Access the System
 
@@ -58,14 +62,21 @@ openssl rand -hex 32 > backend/.env.tmp && echo "ENCRYPTION_KEY=$(cat backend/.e
   - Configure with API key from Admin Portal
 - **Backend API**: http://localhost:3000
 
-## Quick Start with Docker (Other Platforms)
+## Quick Start with Docker (Windows/Mac)
 
 ```bash
-cd TeamSub-TV
+# 1. Copy and configure environment file
+cp .env.example .env
+# Edit .env and replace the placeholder secrets with actual values
+
+# 2. Start containers
 docker-compose up -d
+
+# 3. Seed database
+docker-compose exec backend npm run seed
 ```
 
-**Note**: You'll need to manually create `backend/.env` with `ENCRYPTION_KEY` and `JWT_SECRET` before starting.
+**Important**: The `.env` file must be in the **root directory** and must contain valid `ENCRYPTION_KEY`, `JWT_SECRET`, and `JWT_REFRESH_SECRET` values. Use `openssl rand -hex 32` to generate secure 64-character hex strings for these values.
 
 ## System Status
 

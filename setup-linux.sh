@@ -31,19 +31,59 @@ fi
 echo "✅ All prerequisites found"
 echo ""
 
-# Step 1: Generate crypto keys
-echo "🔐 Step 1/4: Generating crypto keys..."
+# Step 1: Generate crypto keys and create .env file
+echo "🔐 Step 1/4: Generating crypto keys and creating .env file..."
 ENCRYPTION_KEY=$(openssl rand -hex 32)
 JWT_SECRET=$(openssl rand -hex 32)
+JWT_REFRESH_SECRET=$(openssl rand -hex 32)
 
-# Create backend/.env file
-mkdir -p backend
-cat > backend/.env << EOF
-ENCRYPTION_KEY=${ENCRYPTION_KEY}
+# Check if .env already exists
+if [ -f .env ]; then
+    echo "⚠️  Warning: .env file already exists. Creating backup as .env.backup"
+    cp .env .env.backup
+fi
+
+# Create .env file in root directory (for docker-compose)
+cat > .env << EOF
+# Application
+NODE_ENV=development
+PORT=3000
+
+# Database (Docker uses these defaults)
+DB_HOST=localhost
+DB_PORT=5432
+DB_USERNAME=signage
+DB_PASSWORD=signage_password
+DB_DATABASE=signage_cms
+
+# Redis
+REDIS_HOST=localhost
+REDIS_PORT=6379
+
+# JWT Secrets (Auto-generated)
 JWT_SECRET=${JWT_SECRET}
+JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+
+# Encryption Key (Auto-generated)
+ENCRYPTION_KEY=${ENCRYPTION_KEY}
+
+# CORS
+CORS_ORIGIN=http://localhost:3001
+
+# Admin Portal
+ADMIN_PORT=3001
+
+# Display Port
+DISPLAY_PORT=8081
+
+# External API Keys (Optional - for weather features)
+# OPENWEATHER_API_KEY=your_key_here
+# WMATA_API_KEY=your_key_here
+# TOMTOM_API_KEY=your_key_here
 EOF
 
-echo "✅ Crypto keys generated and saved to backend/.env"
+echo "✅ Environment file created with auto-generated secrets"
+echo "   Location: .env (root directory)"
 echo ""
 
 # Step 2: Start Docker containers
