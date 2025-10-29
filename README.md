@@ -72,6 +72,23 @@ cd frontend-admin && npm install
 cd frontend-display && npm install
 ```
 
+### Database Setup
+
+After starting the containers, seed the database with initial data:
+
+```bash
+# Seed admin user, settings, and sample content
+docker-compose exec backend npm run seed
+
+# Alternative: seed from host machine
+cd backend && npm run seed
+```
+
+This creates:
+- Admin user: `admin@teamsub.navy.mil` / `Admin123!`
+- Default FPCON and LAN settings
+- Sample content and schedules
+
 ### Run Locally
 
 ```bash
