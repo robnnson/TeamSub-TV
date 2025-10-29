@@ -100,8 +100,11 @@ export class SchedulingService implements OnModuleInit {
       .leftJoinAndSelect('displayGroup.displays', 'groupDisplays')
       .leftJoinAndSelect('schedule.content', 'content')
       .leftJoinAndSelect('schedule.playlist', 'playlist')
+      .leftJoinAndSelect('playlist.items', 'playlistItems')
+      .leftJoinAndSelect('playlistItems.content', 'itemContent')
       .orderBy('schedule.startTime', 'ASC')
-      .addOrderBy('schedule.priority', 'DESC');
+      .addOrderBy('schedule.priority', 'DESC')
+      .addOrderBy('playlistItems.order', 'ASC');
 
     if (displayId) {
       // Include both direct schedules AND group schedules
@@ -130,6 +133,8 @@ export class SchedulingService implements OnModuleInit {
       .leftJoinAndSelect('displayGroup.displays', 'groupDisplays')
       .leftJoinAndSelect('schedule.content', 'content')
       .leftJoinAndSelect('schedule.playlist', 'playlist')
+      .leftJoinAndSelect('playlist.items', 'playlistItems')
+      .leftJoinAndSelect('playlistItems.content', 'itemContent')
       .where('schedule.isActive = :isActive', { isActive: true })
       .andWhere('schedule.startTime <= :now', { now })
       .andWhere(
@@ -137,7 +142,8 @@ export class SchedulingService implements OnModuleInit {
         { displayId }
       )
       .orderBy('schedule.priority', 'DESC')
-      .addOrderBy('schedule.startTime', 'ASC');
+      .addOrderBy('schedule.startTime', 'ASC')
+      .addOrderBy('playlistItems.order', 'ASC');
 
     return query.getMany();
   }
@@ -157,6 +163,8 @@ export class SchedulingService implements OnModuleInit {
       .leftJoinAndSelect('displayGroup.displays', 'groupDisplays')
       .leftJoinAndSelect('schedule.content', 'content')
       .leftJoinAndSelect('schedule.playlist', 'playlist')
+      .leftJoinAndSelect('playlist.items', 'playlistItems')
+      .leftJoinAndSelect('playlistItems.content', 'itemContent')
       .where('schedule.isActive = :isActive', { isActive: true })
       .andWhere('schedule.startTime <= :now', { now })
       .andWhere(
@@ -164,7 +172,8 @@ export class SchedulingService implements OnModuleInit {
         { displayId }
       )
       .orderBy('schedule.priority', 'DESC')
-      .addOrderBy('schedule.startTime', 'DESC');
+      .addOrderBy('schedule.startTime', 'DESC')
+      .addOrderBy('playlistItems.order', 'ASC');
 
     const schedules = await query.getMany();
 
