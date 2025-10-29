@@ -6,10 +6,23 @@ A production-ready, full-stack digital signage CMS built for Team Submarine oper
 
 ### Automated Setup
 
-Run this one-liner to set up everything (generates crypto keys, starts containers, seeds database):
+Run the setup script to automatically configure everything:
 
 ```bash
-openssl rand -hex 32 > backend/.env.tmp && echo "ENCRYPTION_KEY=$(cat backend/.env.tmp)" > backend/.env && echo "JWT_SECRET=$(openssl rand -hex 32)" >> backend/.env && rm backend/.env.tmp && docker-compose up -d && sleep 10 && docker-compose exec -T backend npm run seed
+chmod +x setup-linux.sh
+./setup-linux.sh
+```
+
+This script will:
+- ✅ Check for Docker, Docker Compose, and OpenSSL
+- 🔐 Generate secure `ENCRYPTION_KEY` and `JWT_SECRET`
+- 🐳 Start all Docker containers
+- 🌱 Seed the database with admin user and sample data
+- 📊 Display access URLs and login credentials
+
+**Alternative one-liner** (if you prefer not to use the script):
+```bash
+openssl rand -hex 32 > backend/.env.tmp && echo "ENCRYPTION_KEY=$(cat backend/.env.tmp)" > backend/.env && echo "JWT_SECRET=$(openssl rand -hex 32)" >> backend/.env && rm backend/.env.tmp && docker-compose up -d && sleep 15 && docker-compose exec -T backend npm run seed
 ```
 
 ### Manual Setup (Step-by-Step)
