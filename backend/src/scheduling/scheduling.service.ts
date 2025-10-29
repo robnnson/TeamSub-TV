@@ -87,19 +87,25 @@ export class SchedulingService implements OnModuleInit {
 
   /**
    * Find all schedules
+   * If displayId is provided, returns schedules for that display AND any groups it belongs to
    */
   async findAll(displayId?: string): Promise<Schedule[]> {
     const query = this.scheduleRepository
       .createQueryBuilder('schedule')
       .leftJoinAndSelect('schedule.display', 'display')
       .leftJoinAndSelect('schedule.displayGroup', 'displayGroup')
+      .leftJoinAndSelect('displayGroup.displays', 'groupDisplays')
       .leftJoinAndSelect('schedule.content', 'content')
       .leftJoinAndSelect('schedule.playlist', 'playlist')
       .orderBy('schedule.startTime', 'ASC')
       .addOrderBy('schedule.priority', 'DESC');
 
     if (displayId) {
-      query.where('schedule.displayId = :displayId', { displayId });
+      // Include both direct schedules AND group schedules
+      query.where(
+        '(schedule.displayId = :displayId OR groupDisplays.id = :displayId)',
+        { displayId }
+      );
     }
 
     return query.getMany();
