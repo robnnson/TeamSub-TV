@@ -22,6 +22,7 @@ export class ContentService {
     metadata: Record<string, any>,
     duration: number,
     createdById: string,
+    expiresAt?: string,
   ): Promise<Content> {
     const content = this.contentRepository.create({
       title,
@@ -31,6 +32,7 @@ export class ContentService {
       metadata,
       duration,
       createdById,
+      expiresAt: expiresAt ? new Date(expiresAt) : null,
     });
 
     const saved = await this.contentRepository.save(content);
@@ -41,11 +43,34 @@ export class ContentService {
     return saved;
   }
 
-  async findAll(): Promise<Content[]> {
-    return this.contentRepository.find({
-      relations: ['createdBy'],
-      order: { createdAt: 'DESC' },
-    });
+  async findAll(includeArchived = false): Promise<Content[]> {
+    const query = this.contentRepository
+      .createQueryBuilder('content')
+      .leftJoinAndSelect('content.createdBy', 'user')
+      .orderBy('content.createdAt', 'DESC');
+
+    if (!includeArchived) {
+      query.andWhere('content.isArchived = :isArchived', { isArchived: false });
+    }
+
+    return query.getMany();
+  }
+
+  async archiveExpiredContent(): Promise<number> {
+    const result = await this.contentRepository
+      .createQueryBuilder()
+      .update(Content)
+      .set({ isArchived: true })
+      .where('expiresAt IS NOT NULL')
+      .andWhere('expiresAt < :now', { now: new Date() })
+      .andWhere('isArchived = :isArchived', { isArchived: false })
+      .execute();
+
+    if (result.affected && result.affected > 0) {
+      this.eventEmitter.emit('content.archived', { count: result.affected });
+    }
+
+    return result.affected || 0;
   }
 
   async findById(id: string): Promise<Content> {

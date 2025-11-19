@@ -1,4 +1,4 @@
-import { IsString, IsEnum, IsOptional, IsNumber, IsObject, Min } from 'class-validator';
+import { IsString, IsEnum, IsOptional, IsNumber, IsObject, Min, IsDateString } from 'class-validator';
 import { ContentType } from '../entities/content.entity';
 
 export class CreateContentDto {
@@ -21,4 +21,8 @@ export class CreateContentDto {
   @Min(1)
   @IsOptional()
   duration?: number;
+
+  @IsDateString()
+  @IsOptional()
+  expiresAt?: string;
 }

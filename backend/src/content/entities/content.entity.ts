@@ -48,6 +48,12 @@ export class Content {
   @Column({ type: 'int', default: 10 })
   duration: number; // seconds
 
+  @Column({ type: 'timestamp', nullable: true })
+  expiresAt: Date;
+
+  @Column({ type: 'boolean', default: false })
+  isArchived: boolean;
+
   @ManyToOne(() => User, { nullable: true })
   @JoinColumn({ name: 'created_by' })
   createdBy: User;
