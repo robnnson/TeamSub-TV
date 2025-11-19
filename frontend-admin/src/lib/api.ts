@@ -229,6 +229,11 @@ class ApiClient {
     await this.client.post(`/displays/${id}/debug`, { enabled });
   }
 
+  async getDisplayPreview(id: string): Promise<any> {
+    const { data } = await this.client.get(`/displays/${id}/preview`);
+    return data;
+  }
+
   async deleteDisplay(id: string): Promise<void> {
     await this.client.delete(`/displays/${id}`);
   }

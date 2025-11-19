@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Monitor, Plus, Trash2, Key, Circle, X, Copy, Check, Edit, Bug } from 'lucide-react';
+import { Monitor, Plus, Trash2, Key, Circle, X, Copy, Check, Edit, Bug, Eye } from 'lucide-react';
 import { api } from '../lib/api';
 import type { Display } from '../types';
+import DisplayPreviewModal from '../components/DisplayPreviewModal';
 
 export default function DisplaysPage() {
   const [displays, setDisplays] = useState<Display[]>([]);
@@ -9,6 +10,7 @@ export default function DisplaysPage() {
   const [error, setError] = useState('');
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [editingDisplay, setEditingDisplay] = useState<Display | null>(null);
+  const [previewingDisplay, setPreviewingDisplay] = useState<Display | null>(null);
   const [debugEnabledDisplays, setDebugEnabledDisplays] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -168,6 +170,14 @@ export default function DisplaysPage() {
 
               <div className="flex gap-2 pt-3 border-t border-gray-200">
                 <button
+                  onClick={() => setPreviewingDisplay(display)}
+                  className="flex-1 btn btn-primary text-sm py-1.5 flex items-center justify-center gap-1"
+                  title="Preview what's showing on this display"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  Preview
+                </button>
+                <button
                   onClick={() => setEditingDisplay(display)}
                   className="flex-1 btn btn-secondary text-sm py-1.5 flex items-center justify-center gap-1"
                 >
@@ -223,6 +233,13 @@ export default function DisplaysPage() {
             setEditingDisplay(null);
             loadDisplays();
           }}
+        />
+      )}
+
+      {previewingDisplay && (
+        <DisplayPreviewModal
+          display={previewingDisplay}
+          onClose={() => setPreviewingDisplay(null)}
         />
       )}
     </div>

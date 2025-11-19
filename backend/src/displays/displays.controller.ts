@@ -18,12 +18,18 @@ import { RolesGuard } from '../common/guards/roles.guard';
 import { DisplayApiKeyGuard } from '../sse/guards/display-api-key.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { UserRole } from '../users/entities/user.entity';
+import { SchedulingService } from '../scheduling/scheduling.service';
+import { ContentService } from '../content/content.service';
 
 export const Public = () => SetMetadata('isPublic', true);
 
 @Controller('displays')
 export class DisplaysController {
-  constructor(private readonly displaysService: DisplaysService) {}
+  constructor(
+    private readonly displaysService: DisplaysService,
+    private readonly schedulingService: SchedulingService,
+    private readonly contentService: ContentService,
+  ) {}
 
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -121,6 +127,52 @@ export class DisplaysController {
   async toggleDebug(@Param('id') id: string, @Body() body: { enabled: boolean }) {
     await this.displaysService.toggleDebugOverlay(id, body.enabled);
     return { message: 'Debug overlay toggled', enabled: body.enabled };
+  }
+
+  @Get(':id/preview')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async getPreview(@Param('id') id: string) {
+    // Verify display exists
+    await this.displaysService.findById(id);
+
+    // Get current scheduled content
+    const scheduledContent = await this.schedulingService.getCurrentContent(id);
+
+    if (scheduledContent) {
+      let content = scheduledContent.content;
+
+      // If it's a playlist schedule, get the first item's content
+      if (!content && scheduledContent.playlist?.items?.length > 0) {
+        const firstItem = scheduledContent.playlist.items[0];
+        if (firstItem.content) {
+          content = firstItem.content;
+        }
+      }
+
+      return {
+        source: 'schedule',
+        schedule: {
+          id: scheduledContent.id,
+          priority: scheduledContent.priority,
+          startTime: scheduledContent.startTime,
+          endTime: scheduledContent.endTime,
+        },
+        content: content,
+        playlist: scheduledContent.playlist,
+      };
+    }
+
+    // If no scheduled content, return latest content
+    const allContent = await this.contentService.findAll();
+    if (allContent && allContent.length > 0) {
+      return {
+        source: 'default',
+        content: allContent[0],
+      };
+    }
+
+    return null;
   }
 
   @Delete(':id')
