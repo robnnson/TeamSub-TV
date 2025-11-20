@@ -617,12 +617,12 @@ export default function Shell({ children, displayName, displayLocation, eventSou
             top: 0,
             left: 0,
             right: 0,
-            bottom: '80px',
+            bottom: displaySettings.showTicker ? '80px' : 0,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             overflow: 'hidden',
-            borderRadius: '15px 15px 0 0',
+            borderRadius: displaySettings.showTicker ? '15px 15px 0 0' : '15px',
           }}>
             {children}
           </div>
