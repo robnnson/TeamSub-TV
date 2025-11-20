@@ -696,13 +696,13 @@ export default function Shell({ children, displayName, displayLocation, eventSou
             <div style={{
               display: 'flex',
               justifyContent: 'center',
-              marginBottom: '20px',
+              marginBottom: '15px',
             }}>
               {weather.icon && (
                 <div style={{
                   background: 'rgba(255, 255, 255, 0.15)',
                   borderRadius: '50%',
-                  padding: '20px',
+                  padding: '15px',
                   backdropFilter: 'blur(10px)',
                   boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
                   border: '2px solid rgba(255, 255, 255, 0.2)',
@@ -711,8 +711,8 @@ export default function Shell({ children, displayName, displayLocation, eventSou
                     src={weather.icon}
                     alt="Weather"
                     style={{
-                      width: '140px',
-                      height: '140px',
+                      width: '100px',
+                      height: '100px',
                       filter: 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4))',
                     }}
                   />
@@ -723,11 +723,11 @@ export default function Shell({ children, displayName, displayLocation, eventSou
             {/* Temperature - Giant and centered */}
             <div style={{
               textAlign: 'center',
-              fontSize: '7em',
+              fontSize: '5em',
               fontWeight: '800',
               color: '#fff',
               lineHeight: '1',
-              marginBottom: '10px',
+              marginBottom: '8px',
               textShadow: '0 6px 25px rgba(0, 0, 0, 0.4)',
             }}>
               {weather.temp}
@@ -736,9 +736,9 @@ export default function Shell({ children, displayName, displayLocation, eventSou
             {/* Description */}
             <div style={{
               textAlign: 'center',
-              fontSize: '2.2em',
+              fontSize: '1.8em',
               color: 'rgba(255, 255, 255, 0.95)',
-              marginBottom: '25px',
+              marginBottom: '20px',
               fontWeight: '500',
               textTransform: 'capitalize',
               letterSpacing: '0.5px',
@@ -761,10 +761,10 @@ export default function Shell({ children, displayName, displayLocation, eventSou
                 backdropFilter: 'blur(10px)',
                 border: '1px solid rgba(255, 255, 255, 0.15)',
               }}>
-                <div style={{ fontSize: '1.3em', color: 'rgba(255, 255, 255, 0.75)', marginBottom: '8px', fontWeight: '500' }}>
+                <div style={{ fontSize: '1.1em', color: 'rgba(255, 255, 255, 0.75)', marginBottom: '8px', fontWeight: '500' }}>
                   Humidity
                 </div>
-                <div style={{ fontSize: '2.8em', fontWeight: 'bold', color: '#fff' }}>
+                <div style={{ fontSize: '2.2em', fontWeight: 'bold', color: '#fff' }}>
                   {weather.humidity}
                 </div>
               </div>
@@ -777,10 +777,10 @@ export default function Shell({ children, displayName, displayLocation, eventSou
                 backdropFilter: 'blur(10px)',
                 border: '1px solid rgba(255, 255, 255, 0.15)',
               }}>
-                <div style={{ fontSize: '1.3em', color: 'rgba(255, 255, 255, 0.75)', marginBottom: '8px', fontWeight: '500' }}>
+                <div style={{ fontSize: '1.1em', color: 'rgba(255, 255, 255, 0.75)', marginBottom: '8px', fontWeight: '500' }}>
                   Wind
                 </div>
-                <div style={{ fontSize: '2.8em', fontWeight: 'bold', color: '#fff' }}>
+                <div style={{ fontSize: '2.2em', fontWeight: 'bold', color: '#fff' }}>
                   {weather.wind}
                 </div>
               </div>
@@ -788,35 +788,35 @@ export default function Shell({ children, displayName, displayLocation, eventSou
 
             {/* 5-Day Forecast */}
             {forecast.length > 0 && (
-              <div style={{ marginTop: '25px', paddingTop: '25px', borderTop: '1px solid rgba(255, 255, 255, 0.2)' }}>
-                <div style={{ fontSize: '1.8em', color: '#fff', marginBottom: '15px', fontWeight: '600', textAlign: 'center' }}>
+              <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid rgba(255, 255, 255, 0.2)' }}>
+                <div style={{ fontSize: '1.4em', color: '#fff', marginBottom: '12px', fontWeight: '600', textAlign: 'center' }}>
                   5-Day Forecast
                 </div>
-                <div style={{ display: 'flex', gap: '10px', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', gap: '8px', justifyContent: 'space-between' }}>
                   {forecast.map((day, index) => (
                     <div key={index} style={{
                       flex: 1,
                       background: 'rgba(255, 255, 255, 0.1)',
                       borderRadius: '12px',
-                      padding: '12px 8px',
+                      padding: '10px 6px',
                       textAlign: 'center',
                       backdropFilter: 'blur(10px)',
                       border: '1px solid rgba(255, 255, 255, 0.15)',
                     }}>
-                      <div style={{ fontSize: '1.1em', color: 'rgba(255, 255, 255, 0.85)', marginBottom: '8px', fontWeight: '600' }}>
+                      <div style={{ fontSize: '0.9em', color: 'rgba(255, 255, 255, 0.85)', marginBottom: '6px', fontWeight: '600' }}>
                         {day.date}
                       </div>
                       <img
                         src={day.icon}
                         alt={day.description}
                         style={{
-                          width: '50px',
-                          height: '50px',
+                          width: '40px',
+                          height: '40px',
                           margin: '0 auto',
                           filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))',
                         }}
                       />
-                      <div style={{ fontSize: '1.4em', color: '#fff', marginTop: '8px', fontWeight: '600' }}>
+                      <div style={{ fontSize: '1.1em', color: '#fff', marginTop: '6px', fontWeight: '600' }}>
                         <span style={{ color: '#ffcc80' }}>{day.high}°</span>
                         <span style={{ color: 'rgba(255, 255, 255, 0.6)', margin: '0 3px' }}>/</span>
                         <span style={{ color: '#90caf9' }}>{day.low}°</span>
