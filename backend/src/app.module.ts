@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { BullModule } from '@nestjs/bullmq';
+import { ScheduleModule } from '@nestjs/schedule';
 import { CommonModule } from './common/common.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
@@ -14,6 +15,8 @@ import { SettingsModule } from './settings/settings.module';
 import { SseModule } from './sse/sse.module';
 import { PlaylistsModule } from './playlists/playlists.module';
 import { DisplayGroupsModule } from './display-groups/display-groups.module';
+import { ReleaseNotesModule } from './release-notes/release-notes.module';
+import { PushNotificationsModule } from './push-notifications/push-notifications.module';
 
 @Module({
   imports: [
@@ -22,6 +25,9 @@ import { DisplayGroupsModule } from './display-groups/display-groups.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
+
+    // Schedule
+    ScheduleModule.forRoot(),
 
     // Database
     TypeOrmModule.forRootAsync({
@@ -72,6 +78,8 @@ import { DisplayGroupsModule } from './display-groups/display-groups.module';
     SettingsModule,
     SseModule,
     PlaylistsModule,
+    ReleaseNotesModule,
+    PushNotificationsModule,
   ],
 })
 export class AppModule {}

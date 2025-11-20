@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsNumber, IsObject, Min } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsObject, Min, IsDateString } from 'class-validator';
 
 export class UpdateContentDto {
   @IsString()
@@ -17,4 +17,8 @@ export class UpdateContentDto {
   @Min(1)
   @IsOptional()
   duration?: number;
+
+  @IsDateString()
+  @IsOptional()
+  expiresAt?: string;
 }

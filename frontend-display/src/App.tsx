@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import html2canvas from 'html2canvas';
 import DisplayApiClient from './api';
 import PairingCodeScreen from './components/PairingCodeScreen';
 import ContentRenderer from './components/ContentRenderer';
@@ -209,8 +210,8 @@ export default function App() {
           { withCredentials: false }
         );
 
-        eventSource.addEventListener('connected', (e) => {
-          console.log('SSE connected:', e);
+        eventSource.addEventListener('connected', () => {
+          console.log('SSE connected');
         });
 
         eventSource.addEventListener('content.changed', () => {
@@ -241,6 +242,50 @@ export default function App() {
           const data = JSON.parse((e as MessageEvent).data);
           console.log('Debug toggle event received:', data);
           setShowDebugOverlay(data.enabled);
+        });
+
+        eventSource.addEventListener('screenshot.request', async () => {
+          console.log('🎯 Screenshot request received!');
+          try {
+            console.log('📸 Starting screenshot capture...');
+            // Capture screenshot of the entire document with reduced quality
+            const canvas = await html2canvas(document.body, {
+              logging: false,
+              useCORS: true,
+              allowTaint: true,
+              scale: 0.5, // Reduce resolution by 50% to save file size
+            });
+
+            console.log('✅ Canvas created:', canvas.width, 'x', canvas.height);
+
+            // Convert canvas to blob with JPEG compression for smaller file size
+            canvas.toBlob(async (blob) => {
+              if (!blob) {
+                console.error('❌ Failed to create screenshot blob');
+                return;
+              }
+
+              console.log('📦 Blob created:', blob.size, 'bytes', '(' + (blob.size / 1024 / 1024).toFixed(2) + ' MB)');
+
+              // Upload screenshot to backend
+              const formData = new FormData();
+              formData.append('file', blob, 'screenshot.jpg');
+
+              try {
+                if (apiClient.current) {
+                  console.log('⬆️ Uploading screenshot...');
+                  await apiClient.current.uploadScreenshot(formData);
+                  console.log('✅ Screenshot uploaded successfully!');
+                } else {
+                  console.error('❌ API client not available');
+                }
+              } catch (err) {
+                console.error('❌ Failed to upload screenshot:', err);
+              }
+            }, 'image/jpeg', 0.7); // Use JPEG with 70% quality for better compression
+          } catch (err) {
+            console.error('❌ Failed to capture screenshot:', err);
+          }
         });
 
         eventSource.onerror = (err) => {

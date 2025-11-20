@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { List, Plus, Trash2, Edit, Clock, Image as ImageIcon, Video, FileText } from 'lucide-react';
+import { List, Plus, Trash2, Edit, Clock, Image as ImageIcon, Video, FileText, Play } from 'lucide-react';
 import { api } from '../lib/api';
 import type { Playlist } from '../types';
 import PlaylistEditor from '../components/PlaylistEditor';
+import PlaylistPreview from '../components/PlaylistPreview';
 
 export default function PlaylistsPage() {
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
@@ -10,6 +11,7 @@ export default function PlaylistsPage() {
   const [error, setError] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingPlaylist, setEditingPlaylist] = useState<Playlist | null>(null);
+  const [previewingPlaylist, setPreviewingPlaylist] = useState<Playlist | null>(null);
 
   useEffect(() => {
     loadPlaylists();
@@ -105,6 +107,13 @@ export default function PlaylistsPage() {
                 </div>
                 <div className="flex gap-2">
                   <button
+                    onClick={() => setPreviewingPlaylist(playlist)}
+                    className="text-green-600 hover:text-green-900"
+                    title="Preview playlist"
+                  >
+                    <Play className="w-4 h-4" />
+                  </button>
+                  <button
                     onClick={() => setEditingPlaylist(playlist)}
                     className="text-blue-600 hover:text-blue-900"
                     title="Edit playlist"
@@ -186,6 +195,13 @@ export default function PlaylistsPage() {
             setEditingPlaylist(null);
             loadPlaylists();
           }}
+        />
+      )}
+
+      {previewingPlaylist && (
+        <PlaylistPreview
+          playlist={previewingPlaylist}
+          onClose={() => setPreviewingPlaylist(null)}
         />
       )}
     </div>

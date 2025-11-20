@@ -7,12 +7,21 @@ interface ShellProps {
   eventSource?: EventSource | null;
 }
 
+interface ForecastDay {
+  date: string;
+  high: number;
+  low: number;
+  icon: string;
+  description: string;
+}
+
 export default function Shell({ children, displayName, displayLocation, eventSource }: ShellProps) {
   const [clockTime, setClockTime] = useState('');
   const [clockDate, setClockDate] = useState('');
   const [currentBanner, setCurrentBanner] = useState(0);
   const [currentTransitSlide, setCurrentTransitSlide] = useState(0);
   const [weather, setWeather] = useState({ temp: '--', desc: 'Loading...', icon: '', humidity: '--', wind: '--' });
+  const [forecast, setForecast] = useState<ForecastDay[]>([]);
   const [trains, setTrains] = useState<any[]>([]);
   const [driveTimes, setDriveTimes] = useState<any[]>([]);
   const [fpconStatus, setFpconStatus] = useState({ status: 'LOADING...', color: '#666' });
@@ -90,6 +99,53 @@ export default function Shell({ children, displayName, displayLocation, eventSou
     return () => clearInterval(interval);
   }, []);
 
+  // Fetch 5-day forecast
+  useEffect(() => {
+    const fetchForecast = async () => {
+      try {
+        const res = await fetch(
+          'https://api.openweathermap.org/data/2.5/forecast?q=Washington,DC,US&units=imperial&appid=9fcfc0149fef9015a6eaba1df22caf5b'
+        );
+        const data = await res.json();
+
+        // Group forecasts by day and get daily highs/lows
+        const dailyForecasts: { [key: string]: { temps: number[], icons: string[], descs: string[] } } = {};
+
+        data.list.forEach((item: any) => {
+          const date = new Date(item.dt * 1000);
+          const dateKey = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+          if (!dailyForecasts[dateKey]) {
+            dailyForecasts[dateKey] = { temps: [], icons: [], descs: [] };
+          }
+
+          dailyForecasts[dateKey].temps.push(item.main.temp);
+          dailyForecasts[dateKey].icons.push(item.weather[0].icon);
+          dailyForecasts[dateKey].descs.push(item.weather[0].description);
+        });
+
+        // Convert to array and take first 5 days
+        const forecastArray: ForecastDay[] = Object.entries(dailyForecasts)
+          .slice(0, 5)
+          .map(([date, data]) => ({
+            date,
+            high: Math.round(Math.max(...data.temps)),
+            low: Math.round(Math.min(...data.temps)),
+            icon: `https://openweathermap.org/img/wn/${data.icons[Math.floor(data.icons.length / 2)]}@2x.png`,
+            description: data.descs[0].charAt(0).toUpperCase() + data.descs[0].slice(1),
+          }));
+
+        setForecast(forecastArray);
+      } catch (err) {
+        console.error('Failed to fetch forecast:', err);
+      }
+    };
+
+    fetchForecast();
+    const interval = setInterval(fetchForecast, 600000); // Update every 10 minutes
+    return () => clearInterval(interval);
+  }, []);
+
   // Fetch train arrivals
   useEffect(() => {
     const fetchTrainArrivals = async () => {
@@ -137,8 +193,10 @@ export default function Shell({ children, displayName, displayLocation, eventSou
       const from = [38.87382041883797, -76.9972499997064];
       const destinations = [
         { name: 'Pentagon', to: [38.868746, -77.056708] },
+        { name: 'Reagan National Airport', to: [38.852083, -77.037722] },
         { name: 'Joint Base Anacostia-Bolling', to: [38.835532, -76.995000] },
         { name: 'Andrews AFB', to: [38.810794, -76.866222] },
+        { name: 'Annapolis, MD', to: [38.978580, -76.492180] },
         { name: 'Pax River', to: [38.273144, -76.453244] },
         { name: 'Reston, VA', to: [38.958630, -77.357002] },
       ];
@@ -408,26 +466,163 @@ export default function Shell({ children, displayName, displayLocation, eventSou
           </div>
         </div>
 
-        {/* Weather Card (Top right) */}
+        {/* Weather Card (Top right) - Modern Clean Design */}
         <div style={{
-          background: 'rgba(255, 255, 255, 0.95)',
-          borderRadius: '15px',
-          padding: '20px',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+          background: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
+          borderRadius: '20px',
+          padding: '30px',
+          boxShadow: '0 15px 50px rgba(0, 0, 0, 0.3)',
+          position: 'relative',
+          overflow: 'hidden',
         }}>
-          <h2 style={{ color: '#333', fontSize: '2.8em', marginBottom: '15px', borderBottom: '3px solid #667eea', paddingBottom: '10px' }}>
-            Current Weather
-          </h2>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginTop: '10px' }}>
-            {weather.icon && <img src={weather.icon} alt="Weather" style={{ width: '120px', height: '120px' }} />}
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: '4.5em', color: '#667eea', fontWeight: 'bold' }}>{weather.temp}</div>
-              <div style={{ fontSize: '2em', color: '#666' }}>{weather.desc}</div>
-              <div style={{ marginTop: '10px', color: '#888', fontSize: '1.5em' }}>
-                <span>Humidity: {weather.humidity}</span><br />
-                <span>Wind: {weather.wind}</span>
+          {/* Subtle decorative elements */}
+          <div style={{
+            position: 'absolute',
+            top: '-30px',
+            right: '-30px',
+            width: '180px',
+            height: '180px',
+            background: 'rgba(255, 255, 255, 0.05)',
+            borderRadius: '50%',
+            filter: 'blur(50px)',
+          }} />
+
+          {/* Content */}
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            {/* Large weather icon at top */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              marginBottom: '20px',
+            }}>
+              {weather.icon && (
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.15)',
+                  borderRadius: '50%',
+                  padding: '20px',
+                  backdropFilter: 'blur(10px)',
+                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
+                  border: '2px solid rgba(255, 255, 255, 0.2)',
+                }}>
+                  <img
+                    src={weather.icon}
+                    alt="Weather"
+                    style={{
+                      width: '140px',
+                      height: '140px',
+                      filter: 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4))',
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Temperature - Giant and centered */}
+            <div style={{
+              textAlign: 'center',
+              fontSize: '7em',
+              fontWeight: '800',
+              color: '#fff',
+              lineHeight: '1',
+              marginBottom: '10px',
+              textShadow: '0 6px 25px rgba(0, 0, 0, 0.4)',
+            }}>
+              {weather.temp}
+            </div>
+
+            {/* Description */}
+            <div style={{
+              textAlign: 'center',
+              fontSize: '2.2em',
+              color: 'rgba(255, 255, 255, 0.95)',
+              marginBottom: '25px',
+              fontWeight: '500',
+              textTransform: 'capitalize',
+              letterSpacing: '0.5px',
+            }}>
+              {weather.desc}
+            </div>
+
+            {/* Weather details - side by side */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-around',
+              gap: '20px',
+            }}>
+              <div style={{
+                flex: 1,
+                background: 'rgba(255, 255, 255, 0.12)',
+                borderRadius: '15px',
+                padding: '18px 15px',
+                textAlign: 'center',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+              }}>
+                <div style={{ fontSize: '1.3em', color: 'rgba(255, 255, 255, 0.75)', marginBottom: '8px', fontWeight: '500' }}>
+                  Humidity
+                </div>
+                <div style={{ fontSize: '2.8em', fontWeight: 'bold', color: '#fff' }}>
+                  {weather.humidity}
+                </div>
+              </div>
+              <div style={{
+                flex: 1,
+                background: 'rgba(255, 255, 255, 0.12)',
+                borderRadius: '15px',
+                padding: '18px 15px',
+                textAlign: 'center',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+              }}>
+                <div style={{ fontSize: '1.3em', color: 'rgba(255, 255, 255, 0.75)', marginBottom: '8px', fontWeight: '500' }}>
+                  Wind
+                </div>
+                <div style={{ fontSize: '2.8em', fontWeight: 'bold', color: '#fff' }}>
+                  {weather.wind}
+                </div>
               </div>
             </div>
+
+            {/* 5-Day Forecast */}
+            {forecast.length > 0 && (
+              <div style={{ marginTop: '25px', paddingTop: '25px', borderTop: '1px solid rgba(255, 255, 255, 0.2)' }}>
+                <div style={{ fontSize: '1.8em', color: '#fff', marginBottom: '15px', fontWeight: '600', textAlign: 'center' }}>
+                  5-Day Forecast
+                </div>
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'space-between' }}>
+                  {forecast.map((day, index) => (
+                    <div key={index} style={{
+                      flex: 1,
+                      background: 'rgba(255, 255, 255, 0.1)',
+                      borderRadius: '12px',
+                      padding: '12px 8px',
+                      textAlign: 'center',
+                      backdropFilter: 'blur(10px)',
+                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                    }}>
+                      <div style={{ fontSize: '1.1em', color: 'rgba(255, 255, 255, 0.85)', marginBottom: '8px', fontWeight: '600' }}>
+                        {day.date}
+                      </div>
+                      <img
+                        src={day.icon}
+                        alt={day.description}
+                        style={{
+                          width: '50px',
+                          height: '50px',
+                          margin: '0 auto',
+                          filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))',
+                        }}
+                      />
+                      <div style={{ fontSize: '1.4em', color: '#fff', marginTop: '8px', fontWeight: '600' }}>
+                        <span style={{ color: '#ffcc80' }}>{day.high}°</span>
+                        <span style={{ color: 'rgba(255, 255, 255, 0.6)', margin: '0 3px' }}>/</span>
+                        <span style={{ color: '#90caf9' }}>{day.low}°</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

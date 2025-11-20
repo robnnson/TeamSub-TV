@@ -63,6 +63,15 @@ class DisplayApiClient {
     const { data } = await this.client.get<{ status: string }>('/settings/status/lan');
     return data;
   }
+
+  // Upload screenshot
+  async uploadScreenshot(formData: FormData): Promise<void> {
+    await this.client.post('/displays/me/screenshot', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  }
 }
 
 export default DisplayApiClient;

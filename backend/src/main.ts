@@ -7,7 +7,10 @@ import multipart from '@fastify/multipart';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const fastifyAdapter = new FastifyAdapter({ logger: true });
+  const fastifyAdapter = new FastifyAdapter({
+    logger: true,
+    bodyLimit: 50 * 1024 * 1024, // 50MB body limit for large screenshots
+  });
 
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,

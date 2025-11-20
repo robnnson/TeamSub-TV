@@ -33,6 +33,8 @@ export interface Content {
   tags: string[];
   thumbnailPath: string | null;
   duration: number;
+  expiresAt: string | null;
+  isArchived: boolean;
   createdById: string;
   createdAt: string;
   updatedAt: string;
@@ -56,6 +58,25 @@ export interface Display {
   updatedAt: string;
   apiKey?: string; // Only present on creation
   groups?: DisplayGroup[];
+  // Health monitoring fields
+  lastHeartbeat?: string | null;
+  uptimePercentage?: number | null;
+  totalHeartbeats?: number;
+  missedHeartbeats?: number;
+  lastOnlineAt?: string | null;
+  lastOfflineAt?: string | null;
+  performanceMetrics?: {
+    cpuUsage?: number;
+    memoryUsage?: number;
+    diskUsage?: number;
+    networkLatency?: number;
+    lastUpdated?: string;
+  } | null;
+  errorLogs?: Array<{
+    timestamp: string;
+    message: string;
+    severity: 'low' | 'medium' | 'high';
+  }> | null;
 }
 
 // Display Group types
@@ -145,4 +166,53 @@ export interface ApiError {
   message: string;
   error?: string;
   statusCode: number;
+}
+
+
+// Release Notes types
+export interface ReleaseNote {
+  id: string;
+  version: string;
+  title: string;
+  content: string;
+  releaseDate: string;
+  isMajor: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Display Health Monitoring types
+export interface DisplayHealth {
+  displayId: string;
+  displayName: string;
+  status: DisplayStatus;
+  uptime: number;
+  totalHeartbeats: number;
+  missedHeartbeats: number;
+  lastHeartbeat: string | null;
+  timeSinceLastHeartbeat: number | null;
+  lastOnlineAt: string | null;
+  lastOfflineAt: string | null;
+  performanceMetrics: {
+    cpuUsage?: number;
+    memoryUsage?: number;
+    diskUsage?: number;
+    networkLatency?: number;
+    lastUpdated?: string;
+  } | null;
+  errorLogs: Array<{
+    timestamp: string;
+    message: string;
+    severity: 'low' | 'medium' | 'high';
+  }>;
+  healthScore: number;
+}
+
+export interface DisplayAlert {
+  displayId: string;
+  displayName: string;
+  type: 'offline' | 'low_uptime' | 'error' | 'high_cpu' | 'high_memory' | 'high_disk';
+  severity: 'low' | 'medium' | 'high';
+  message: string;
+  timestamp: string;
 }

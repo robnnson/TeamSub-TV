@@ -399,7 +399,26 @@ export default function WeatherShell({ children, displayName, displayLocation, e
             justifyContent: 'center',
             gap: '15px',
           }}>
-            {weather.icon && <img src={weather.icon} alt="Weather" style={{ width: '80px', height: '80px' }} />}
+            {weather.icon && (
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.15)',
+                borderRadius: '50%',
+                padding: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <img
+                  src={weather.icon}
+                  alt="Weather"
+                  style={{
+                    width: '80px',
+                    height: '80px',
+                    filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))',
+                  }}
+                />
+              </div>
+            )}
             <div style={{ textAlign: 'left' }}>
               <div style={{ fontSize: '3em', color: '#fff', fontWeight: 'bold' }}>{weather.temp}</div>
               <div style={{ fontSize: '1.5em', color: '#ddd' }}>{weather.desc}</div>
@@ -480,13 +499,13 @@ export default function WeatherShell({ children, displayName, displayLocation, e
 
         {/* 5-Day Forecast Panel (Top right) */}
         <div style={{
-          background: 'rgba(255, 255, 255, 0.95)',
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           borderRadius: '15px',
           padding: '20px',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
           overflow: 'hidden',
         }}>
-          <h2 style={{ color: '#333', fontSize: '2.5em', marginBottom: '15px', borderBottom: '3px solid #667eea', paddingBottom: '10px' }}>
+          <h2 style={{ color: '#fff', fontSize: '2.5em', marginBottom: '15px', borderBottom: '3px solid rgba(255, 255, 255, 0.3)', paddingBottom: '10px' }}>
             5-Day Forecast
           </h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: 'calc(100% - 60px)', overflowY: 'auto' }}>
@@ -495,14 +514,33 @@ export default function WeatherShell({ children, displayName, displayLocation, e
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '10px',
-                background: 'linear-gradient(to right, #e3f2fd, #bbdefb)',
-                borderRadius: '8px',
+                padding: '12px 15px',
+                background: 'rgba(255, 255, 255, 0.95)',
+                borderRadius: '10px',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
               }}>
                 <div style={{ flex: 1, fontSize: '1.6em', fontWeight: 'bold', color: '#333' }}>
                   {day.date}
                 </div>
-                <img src={day.icon} alt={day.description} style={{ width: '50px', height: '50px' }} />
+                <div style={{
+                  background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
+                  borderRadius: '50%',
+                  padding: '5px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 2px 6px rgba(0, 0, 0, 0.15)',
+                }}>
+                  <img
+                    src={day.icon}
+                    alt={day.description}
+                    style={{
+                      width: '50px',
+                      height: '50px',
+                      filter: 'drop-shadow(0 1px 3px rgba(0, 0, 0, 0.3))',
+                    }}
+                  />
+                </div>
                 <div style={{ flex: 1, textAlign: 'right', fontSize: '1.5em', color: '#555' }}>
                   <span style={{ color: '#d32f2f', fontWeight: 'bold' }}>{day.high}°</span>
                   {' / '}
@@ -510,7 +548,7 @@ export default function WeatherShell({ children, displayName, displayLocation, e
                 </div>
               </div>
             )) : (
-              <div style={{ padding: '12px', color: '#666', fontSize: '1.5em' }}>Loading forecast...</div>
+              <div style={{ padding: '12px', color: '#fff', fontSize: '1.5em' }}>Loading forecast...</div>
             )}
           </div>
         </div>

@@ -55,6 +55,50 @@ export class Display {
   })
   status: DisplayStatus;
 
+  @Column({ nullable: true })
+  lastScreenshotPath: string;
+
+  @Column({ type: 'timestamp', nullable: true })
+  lastScreenshotAt: Date;
+
+  // Health monitoring fields
+  @Column({ type: 'timestamp', nullable: true })
+  lastHeartbeat: Date;
+
+  @Column({ type: 'float', nullable: true })
+  uptimePercentage: number;
+
+  @Column({ type: 'int', default: 0 })
+  totalHeartbeats: number;
+
+  @Column({ type: 'int', default: 0 })
+  missedHeartbeats: number;
+
+  @Column({ type: 'timestamp', nullable: true })
+  lastOnlineAt: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  lastOfflineAt: Date;
+
+  @Column({ type: 'int', nullable: true })
+  currentContentId: number;
+
+  @Column({ type: 'jsonb', nullable: true })
+  performanceMetrics: {
+    cpuUsage?: number;
+    memoryUsage?: number;
+    diskUsage?: number;
+    networkLatency?: number;
+    lastUpdated?: string;
+  };
+
+  @Column({ type: 'jsonb', nullable: true })
+  errorLogs: Array<{
+    timestamp: string;
+    message: string;
+    severity: 'low' | 'medium' | 'high';
+  }>;
+
   @ManyToMany(() => DisplayGroup, (group) => group.displays)
   groups: DisplayGroup[];
 

@@ -308,4 +308,14 @@ export class SseService {
       timestamp: new Date().toISOString(),
     });
   }
+
+  @OnEvent('screenshot.request')
+  handleScreenshotRequest(payload: any) {
+    const { displayId } = payload;
+    this.logger.log(`Screenshot requested for display ${displayId}`);
+    this.broadcastToDisplay(displayId, 'screenshot.request', {
+      ...payload,
+      timestamp: new Date().toISOString(),
+    });
+  }
 }

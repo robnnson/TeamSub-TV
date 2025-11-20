@@ -23,6 +23,7 @@ export class ContentService {
     duration: number,
     createdById: string,
     expiresAt?: string,
+    thumbnailPath?: string | null,
   ): Promise<Content> {
     const content = this.contentRepository.create({
       title,
@@ -33,6 +34,7 @@ export class ContentService {
       duration,
       createdById,
       expiresAt: expiresAt ? new Date(expiresAt) : null,
+      thumbnailPath: thumbnailPath || null,
     });
 
     const saved = await this.contentRepository.save(content);
@@ -94,12 +96,55 @@ export class ContentService {
     });
   }
 
+  async search(filters: {
+    type?: ContentType;
+    search?: string;
+    tags?: string[];
+    includeArchived?: boolean;
+  }): Promise<Content[]> {
+    const query = this.contentRepository
+      .createQueryBuilder('content')
+      .leftJoinAndSelect('content.createdBy', 'user');
+
+    // Filter by archived status
+    if (!filters.includeArchived) {
+      query.andWhere('content.isArchived = :isArchived', { isArchived: false });
+    }
+
+    // Filter by type
+    if (filters.type) {
+      query.andWhere('content.type = :type', { type: filters.type });
+    }
+
+    // Search by title or text content
+    if (filters.search) {
+      query.andWhere(
+        '(LOWER(content.title) LIKE LOWER(:search) OR LOWER(content.textContent) LIKE LOWER(:search))',
+        { search: `%${filters.search}%` },
+      );
+    }
+
+    // Filter by tags (stored in metadata.tags array)
+    if (filters.tags && filters.tags.length > 0) {
+      // Use JSON contains for PostgreSQL
+      query.andWhere(
+        `content.tags && ARRAY[:...tags]::text[]`,
+        { tags: filters.tags },
+      );
+    }
+
+    query.orderBy('content.createdAt', 'DESC');
+
+    return query.getMany();
+  }
+
   async update(
     id: string,
     title?: string,
     textContent?: string,
     metadata?: Record<string, any>,
     duration?: number,
+    expiresAt?: string,
   ): Promise<Content> {
     const content = await this.findById(id);
 
@@ -107,6 +152,9 @@ export class ContentService {
     if (textContent !== undefined) content.textContent = textContent;
     if (metadata !== undefined) content.metadata = metadata;
     if (duration !== undefined) content.duration = duration;
+    if (expiresAt !== undefined) {
+      content.expiresAt = expiresAt ? new Date(expiresAt) : null;
+    }
 
     const updated = await this.contentRepository.save(content);
 

@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { FileText, Image, Video, List, Upload, Trash2, X, Edit } from 'lucide-react';
+import { FileText, Image, Video, List, Upload, Trash2, X, Edit, Search, Calendar } from 'lucide-react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { api } from '../lib/api';
-import type { Content, ContentType } from '../types';
+import type { Content, ContentType, Display } from '../types';
 
 export default function ContentPage() {
   const [content, setContent] = useState<Content[]>([]);
@@ -13,9 +13,20 @@ export default function ContentPage() {
   const [showTextModal, setShowTextModal] = useState(false);
   const [editingContent, setEditingContent] = useState<Content | null>(null);
 
+  // Filter state
+  const [searchTerm, setSearchTerm] = useState('');
+  const [typeFilter, setTypeFilter] = useState<ContentType | ''>('');
+  const [showArchived, setShowArchived] = useState(false);
+
+  // Quick schedule modal state
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [schedulingContent, setSchedulingContent] = useState<Content | null>(null);
+  const [displays, setDisplays] = useState<Display[]>([]);
+
   useEffect(() => {
     loadContent();
-  }, []);
+    loadDisplays();
+  }, [searchTerm, typeFilter, showArchived]);
 
   const loadContent = async () => {
     try {
@@ -28,6 +39,20 @@ export default function ContentPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadDisplays = async () => {
+    try {
+      const data = await api.getDisplays();
+      setDisplays(data);
+    } catch (err: any) {
+      console.error('Failed to load displays:', err);
+    }
+  };
+
+  const handleScheduleContent = (content: Content) => {
+    setSchedulingContent(content);
+    setShowScheduleModal(true);
   };
 
   const handleDeleteContent = async (id: string) => {
@@ -95,6 +120,65 @@ export default function ContentPage() {
         </div>
       )}
 
+      {/* Search and Filter Bar */}
+      <div className="card mb-6">
+        <div className="flex flex-wrap gap-4 items-center">
+          {/* Search Input */}
+          <div className="flex-1 min-w-[200px]">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="text"
+                placeholder="Search by title..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="input pl-10 w-full"
+              />
+            </div>
+          </div>
+
+          {/* Type Filter */}
+          <div className="min-w-[150px]">
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value as ContentType | '')}
+              className="input w-full"
+            >
+              <option value="">All Types</option>
+              <option value="image">Images</option>
+              <option value="video">Videos</option>
+              <option value="text">Text</option>
+              <option value="slideshow">Slideshows</option>
+            </select>
+          </div>
+
+          {/* Show Archived Checkbox */}
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showArchived}
+              onChange={(e) => setShowArchived(e.target.checked)}
+              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            />
+            <span className="text-sm text-gray-700">Show Archived</span>
+          </label>
+
+          {/* Clear Filters */}
+          {(searchTerm || typeFilter || showArchived) && (
+            <button
+              onClick={() => {
+                setSearchTerm('');
+                setTypeFilter('');
+                setShowArchived(false);
+              }}
+              className="btn btn-secondary text-sm"
+            >
+              Clear Filters
+            </button>
+          )}
+        </div>
+      </div>
+
       {loading ? (
         <div className="card">
           <div className="animate-pulse">
@@ -148,7 +232,19 @@ export default function ContentPage() {
                   <tr key={item.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-3">
-                        <span className={getTypeColor(item.type)}>
+                        {item.thumbnailPath ? (
+                          <img
+                            src={`/api/content/${item.id}/thumbnail`}
+                            alt={item.title}
+                            className="w-12 h-8 object-cover rounded"
+                            onError={(e) => {
+                              // Fallback to icon if thumbnail fails to load
+                              e.currentTarget.style.display = 'none';
+                              e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                            }}
+                          />
+                        ) : null}
+                        <span className={`${item.thumbnailPath ? 'hidden' : ''} ${getTypeColor(item.type)}`}>
                           {getContentIcon(item.type)}
                         </span>
                         <span className="text-sm font-medium text-gray-900">{item.title}</span>
@@ -172,6 +268,13 @@ export default function ContentPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => handleScheduleContent(item)}
+                          className="text-green-600 hover:text-green-900"
+                          title="Schedule to display"
+                        >
+                          <Calendar className="w-4 h-4" />
+                        </button>
                         <button
                           onClick={() => setEditingContent(item)}
                           className="text-blue-600 hover:text-blue-900"
@@ -204,6 +307,22 @@ export default function ContentPage() {
           onSuccess={() => {
             setEditingContent(null);
             loadContent();
+          }}
+        />
+      )}
+
+      {/* Quick Schedule Modal */}
+      {showScheduleModal && schedulingContent && (
+        <QuickScheduleModal
+          content={schedulingContent}
+          displays={displays}
+          onClose={() => {
+            setShowScheduleModal(false);
+            setSchedulingContent(null);
+          }}
+          onSuccess={() => {
+            setShowScheduleModal(false);
+            setSchedulingContent(null);
           }}
         />
       )}
@@ -429,21 +548,54 @@ function EditModal({ content, onClose, onSuccess }: { content: Content; onClose:
 }
 
 function UploadModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
-  const [file, setFile] = useState<File | null>(null);
-  const [title, setTitle] = useState('');
+  const [files, setFiles] = useState<File[]>([]);
   const [duration, setDuration] = useState(30);
+  const [expiresAt, setExpiresAt] = useState('');
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
+  const [uploadResult, setUploadResult] = useState<{ successful: number; failed: number } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file) return;
+    if (files.length === 0) return;
 
     try {
       setUploading(true);
       setError('');
-      await api.uploadContent(file, title, duration);
-      onSuccess();
+      setUploadResult(null);
+
+      if (files.length === 1) {
+        // Single file upload
+        await api.uploadContent(files[0], files[0].name.replace(/\.[^/.]+$/, ''), duration);
+        onSuccess();
+      } else {
+        // Multiple files - upload sequentially
+        let successful = 0;
+        let failed = 0;
+        const failedFiles: string[] = [];
+
+        for (const file of files) {
+          try {
+            await api.uploadContent(file, file.name.replace(/\.[^/.]+$/, ''), duration);
+            successful++;
+          } catch (err) {
+            failed++;
+            failedFiles.push(file.name);
+          }
+        }
+
+        setUploadResult({ successful, failed });
+
+        if (failed > 0) {
+          setError(`${failed} file(s) failed to upload. ${failedFiles.join(', ')}`);
+        }
+
+        if (successful > 0) {
+          setTimeout(() => {
+            onSuccess();
+          }, 2000);
+        }
+      }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to upload content');
     } finally {
@@ -451,9 +603,18 @@ function UploadModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
     }
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = Array.from(e.target.files || []);
+    setFiles(selectedFiles);
+  };
+
+  const removeFile = (index: number) => {
+    setFiles(files.filter((_, i) => i !== index));
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+      <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-gray-900">Upload Media</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
@@ -465,31 +626,13 @@ function UploadModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Title
-              </label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="input w-full"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                File
+                Files (Max 20 files, 500MB total)
               </label>
               <input
                 type="file"
                 accept="image/*,video/*"
-                onChange={(e) => {
-                  const selectedFile = e.target.files?.[0];
-                  setFile(selectedFile || null);
-                  if (selectedFile && !title) {
-                    setTitle(selectedFile.name.replace(/\.[^/.]+$/, ''));
-                  }
-                }}
+                multiple
+                onChange={handleFileChange}
                 className="input w-full"
                 required
               />
@@ -497,6 +640,39 @@ function UploadModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
                 Accepted: Images (JPG, PNG, GIF) and Videos (MP4, WebM)
               </p>
             </div>
+
+            {files.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Selected Files ({files.length})
+                </label>
+                <div className="border border-gray-300 rounded-lg max-h-48 overflow-y-auto">
+                  {files.map((file, index) => (
+                    <div key={index} className="flex items-center justify-between p-2 border-b border-gray-200 last:border-b-0 hover:bg-gray-50">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        {file.type.startsWith('image/') ? (
+                          <Image className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                        ) : (
+                          <Video className="w-4 h-4 text-purple-600 flex-shrink-0" />
+                        )}
+                        <span className="text-sm truncate">{file.name}</span>
+                        <span className="text-xs text-gray-500 flex-shrink-0">
+                          ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeFile(index)}
+                        className="text-red-600 hover:text-red-800 ml-2 flex-shrink-0"
+                        disabled={uploading}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -514,6 +690,28 @@ function UploadModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
                 For images: how long to display. For videos: ignored (uses video length).
               </p>
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Expiration Date (optional)
+              </label>
+              <input
+                type="datetime-local"
+                value={expiresAt}
+                onChange={(e) => setExpiresAt(e.target.value)}
+                className="input w-full"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Content will be automatically archived after this date
+              </p>
+            </div>
+
+            {uploadResult && (
+              <div className="bg-blue-50 border border-blue-200 text-blue-700 px-3 py-2 rounded text-sm">
+                ✓ {uploadResult.successful} file(s) uploaded successfully
+                {uploadResult.failed > 0 && `, ${uploadResult.failed} failed`}
+              </div>
+            )}
 
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded text-sm">
@@ -533,9 +731,9 @@ function UploadModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
               <button
                 type="submit"
                 className="btn btn-primary"
-                disabled={!file || uploading}
+                disabled={files.length === 0 || uploading}
               >
-                {uploading ? 'Uploading...' : 'Upload'}
+                {uploading ? 'Uploading...' : `Upload ${files.length} file(s)`}
               </button>
             </div>
           </div>
@@ -550,6 +748,7 @@ function TextModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () 
   const [textContent, setTextContent] = useState('');
   const [duration, setDuration] = useState(30);
   const [backgroundColor, setBackgroundColor] = useState('#FFFFFF');
+  const [expiresAt, setExpiresAt] = useState('');
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
 
@@ -691,6 +890,21 @@ function TextModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () 
               />
             </div>
 
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Expiration Date (optional)
+              </label>
+              <input
+                type="datetime-local"
+                value={expiresAt}
+                onChange={(e) => setExpiresAt(e.target.value)}
+                className="input w-full"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Content will be automatically archived after this date
+              </p>
+            </div>
+
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded text-sm">
                 {error}
@@ -714,6 +928,176 @@ function TextModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () 
                 {creating ? 'Creating...' : 'Create'}
               </button>
             </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// Quick Schedule Modal Component
+function QuickScheduleModal({
+  content,
+  displays,
+  onClose,
+  onSuccess,
+}: {
+  content: Content;
+  displays: Display[];
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [selectedDisplayId, setSelectedDisplayId] = useState('');
+  const [startTime, setStartTime] = useState(() => {
+    // Default to current time
+    const now = new Date();
+    return now.toISOString().slice(0, 16);
+  });
+  const [endTime, setEndTime] = useState('');
+  const [priority, setPriority] = useState(5);
+  const [creating, setCreating] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!selectedDisplayId) {
+      alert('Please select a display');
+      return;
+    }
+
+    try {
+      setCreating(true);
+      await api.createSchedule({
+        displayId: selectedDisplayId,
+        contentId: content.id,
+        startTime: new Date(startTime).toISOString(),
+        endTime: endTime ? new Date(endTime).toISOString() : undefined,
+        priority,
+        isActive: true,
+      });
+
+      onSuccess();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to create schedule');
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+        <form onSubmit={handleSubmit}>
+          {/* Header */}
+          <div className="flex items-center justify-between px-6 py-4 border-b">
+            <h3 className="text-lg font-semibold text-gray-900">Quick Schedule</h3>
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Body */}
+          <div className="px-6 py-4 space-y-4">
+            {/* Content Info */}
+            <div className="bg-gray-50 rounded p-3">
+              <p className="text-sm text-gray-600">Scheduling:</p>
+              <p className="font-medium text-gray-900">{content.title}</p>
+              <p className="text-xs text-gray-500 mt-1">
+                {content.type} • {content.duration}s duration
+              </p>
+            </div>
+
+            {/* Display Selection */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Display *
+              </label>
+              <select
+                value={selectedDisplayId}
+                onChange={(e) => setSelectedDisplayId(e.target.value)}
+                className="input w-full"
+                required
+              >
+                <option value="">Select a display...</option>
+                {displays.map((display) => (
+                  <option key={display.id} value={display.id}>
+                    {display.name} ({display.location})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Start Time */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Start Time *
+              </label>
+              <input
+                type="datetime-local"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                className="input w-full"
+                required
+              />
+            </div>
+
+            {/* End Time (Optional) */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                End Time (Optional)
+              </label>
+              <input
+                type="datetime-local"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                className="input w-full"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Leave empty for indefinite scheduling
+              </p>
+            </div>
+
+            {/* Priority */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Priority: {priority}
+              </label>
+              <input
+                type="range"
+                min="1"
+                max="10"
+                value={priority}
+                onChange={(e) => setPriority(parseInt(e.target.value))}
+                className="w-full"
+              />
+              <div className="flex justify-between text-xs text-gray-500">
+                <span>Low (1)</span>
+                <span>High (10)</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="px-6 py-4 border-t bg-gray-50 flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn btn-secondary"
+              disabled={creating}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={creating}
+            >
+              {creating ? 'Scheduling...' : 'Schedule Content'}
+            </button>
           </div>
         </form>
       </div>

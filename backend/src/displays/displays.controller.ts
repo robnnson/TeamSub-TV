@@ -9,7 +9,11 @@ import {
   UseGuards,
   Request,
   SetMetadata,
+  Res,
+  Req,
+  BadRequestException,
 } from '@nestjs/common';
+import { FastifyReply, FastifyRequest } from 'fastify';
 import { DisplaysService } from './displays.service';
 import { CreateDisplayDto } from './dto/create-display.dto';
 import { UpdateDisplayDto } from './dto/update-display.dto';
@@ -20,6 +24,10 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { UserRole } from '../users/entities/user.entity';
 import { SchedulingService } from '../scheduling/scheduling.service';
 import { ContentService } from '../content/content.service';
+import * as path from 'path';
+import * as fs from 'fs/promises';
+import * as fsSync from 'fs';
+import { pipeline } from 'stream/promises';
 
 export const Public = () => SetMetadata('isPublic', true);
 
@@ -175,11 +183,134 @@ export class DisplaysController {
     return null;
   }
 
+  @Post(':id/screenshot/request')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async requestScreenshot(@Param('id') id: string) {
+    return this.displaysService.requestScreenshot(id);
+  }
+
+  @Post('me/screenshot')
+  @UseGuards(DisplayApiKeyGuard)
+  async uploadScreenshot(@Request() req: any, @Req() fastifyReq: FastifyRequest) {
+    const display = req.display;
+
+    try {
+      const data = await fastifyReq.file();
+
+      if (!data) {
+        throw new BadRequestException('No file uploaded');
+      }
+
+      // Validate MIME type
+      if (!data.mimetype.startsWith('image/')) {
+        throw new BadRequestException('File must be an image');
+      }
+
+      // Generate filename
+      const timestamp = Date.now();
+      const ext = path.extname(data.filename) || '.png';
+      const filename = `screenshot_${display.id}_${timestamp}${ext}`;
+
+      // Save file to screenshots directory
+      const mediaDir = process.env.MEDIA_DIR || path.join(process.cwd(), 'media');
+      const screenshotDir = path.join(mediaDir, 'screenshots');
+
+      // Ensure directory exists
+      await fs.mkdir(screenshotDir, { recursive: true });
+
+      const filePath = path.join(screenshotDir, filename);
+      await pipeline(data.file, fsSync.createWriteStream(filePath));
+
+      // Update display with screenshot info
+      const relativePath = path.join('screenshots', filename);
+      await this.displaysService.updateScreenshotPath(display.id, relativePath);
+
+      return { message: 'Screenshot uploaded successfully', path: relativePath };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException('Screenshot upload failed: ' + error.message);
+    }
+  }
+
+  @Get(':id/screenshot/latest')
+  async getLatestScreenshot(@Param('id') id: string, @Res() res: FastifyReply) {
+    const display = await this.displaysService.findById(id);
+
+    if (!display.lastScreenshotPath) {
+      throw new BadRequestException('No screenshot available for this display');
+    }
+
+    const mediaDir = process.env.MEDIA_DIR || path.join(process.cwd(), 'media');
+    const screenshotFullPath = path.join(mediaDir, display.lastScreenshotPath);
+
+    // Check if file exists
+    try {
+      await fs.access(screenshotFullPath);
+    } catch {
+      throw new BadRequestException('Screenshot file not found');
+    }
+
+    const ext = path.extname(screenshotFullPath).toLowerCase();
+    const mimeTypes: Record<string, string> = {
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.png': 'image/png',
+      '.gif': 'image/gif',
+      '.webp': 'image/webp',
+    };
+
+    res.header('Content-Type', mimeTypes[ext] || 'image/png');
+    res.header('Cache-Control', 'no-cache');
+
+    const fileStream = fsSync.createReadStream(screenshotFullPath);
+    return res.send(fileStream);
+  }
+
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   async remove(@Param('id') id: string) {
     await this.displaysService.remove(id);
     return { message: 'Display deleted successfully' };
+  }
+
+  // Health monitoring endpoints
+  @Get(':id/health')
+  @UseGuards(JwtAuthGuard)
+  async getDisplayHealth(@Param('id') id: string) {
+    return this.displaysService.getDisplayHealth(id);
+  }
+
+  @Get('monitoring/health-all')
+  @UseGuards(JwtAuthGuard)
+  async getAllDisplaysHealth() {
+    return this.displaysService.getAllDisplaysHealth();
+  }
+
+  @Get('monitoring/alerts')
+  @UseGuards(JwtAuthGuard)
+  async getDisplayAlerts() {
+    return this.displaysService.getDisplayAlerts();
+  }
+
+  @Post(':id/log-error')
+  @UseGuards(DisplayApiKeyGuard)
+  async logDisplayError(
+    @Param('id') id: string,
+    @Body() body: { message: string; severity?: 'low' | 'medium' | 'high' },
+  ) {
+    await this.displaysService.logDisplayError(id, body.message, body.severity);
+    return { message: 'Error logged successfully' };
+  }
+
+  @Delete(':id/errors')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async clearDisplayErrors(@Param('id') id: string) {
+    await this.displaysService.clearDisplayErrors(id);
+    return { message: 'Errors cleared successfully' };
   }
 }

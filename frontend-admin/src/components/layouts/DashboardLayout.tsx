@@ -13,21 +13,32 @@ import {
   MessageSquare,
   List,
   Layers,
+  BookOpen,
+  HelpCircle,
+  Activity,
+  Bell,
+  BellRing,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { api } from '../../lib/api';
 import ChangePasswordModal from '../ChangePasswordModal';
+import ThemeToggle from '../ThemeToggle';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Content', href: '/content', icon: FileText },
   { name: 'Displays', href: '/displays', icon: Monitor },
   { name: 'Display Groups', href: '/display-groups', icon: Layers },
+  { name: 'Display Monitoring', href: '/display-monitoring', icon: Activity },
   { name: 'Schedules', href: '/schedules', icon: Calendar },
   { name: 'Playlists', href: '/playlists', icon: List },
   { name: 'Users', href: '/users', icon: Users },
   { name: 'Ticker Messages', href: '/ticker', icon: MessageSquare },
+  { name: 'Push Notifications', href: '/push-notifications', icon: Bell },
+  { name: 'My Notifications', href: '/notification-settings', icon: BellRing },
   { name: 'Settings', href: '/settings', icon: Settings },
+  { name: 'Release Notes', href: '/release-notes', icon: BookOpen },
+  { name: 'Help', href: '/help', icon: HelpCircle },
 ];
 
 export default function DashboardLayout() {
@@ -53,16 +64,16 @@ export default function DashboardLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Sidebar */}
-      <div className="fixed inset-y-0 left-0 w-64 bg-white border-r border-gray-200">
+      <div className="fixed inset-y-0 left-0 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex items-center gap-3 px-6 py-6 border-b border-gray-200">
+          <div className="flex items-center gap-3 px-6 py-6 border-b border-gray-200 dark:border-gray-700">
             <Shield className="w-8 h-8 text-primary-600" />
             <div>
-              <h1 className="font-bold text-gray-900">Team Submarine</h1>
-              <p className="text-xs text-gray-500">Admin Portal</p>
+              <h1 className="font-bold text-gray-900 dark:text-gray-100">Team Submarine</h1>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Admin Portal</p>
             </div>
           </div>
 
@@ -79,8 +90,8 @@ export default function DashboardLayout() {
                   className={clsx(
                     'flex items-center gap-3 px-4 py-3 rounded-lg transition-colors',
                     isActive
-                      ? 'bg-primary-50 text-primary-700 font-medium'
-                      : 'text-gray-700 hover:bg-gray-50'
+                      ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 font-medium'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                   )}
                 >
                   <Icon className="w-5 h-5" />
@@ -90,11 +101,15 @@ export default function DashboardLayout() {
             })}
           </nav>
 
-          {/* Logout */}
-          <div className="p-4 border-t border-gray-200">
+          {/* Theme Toggle & Logout */}
+          <div className="p-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
+            <div className="flex items-center justify-between px-4">
+              <span className="text-sm text-gray-600 dark:text-gray-400">Theme</span>
+              <ThemeToggle />
+            </div>
             <button
               onClick={handleLogout}
-              className="flex items-center gap-3 px-4 py-3 w-full text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+              className="flex items-center gap-3 px-4 py-3 w-full text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
             >
               <LogOut className="w-5 h-5" />
               Logout

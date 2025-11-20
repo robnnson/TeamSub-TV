@@ -12,6 +12,9 @@ import type {
   DisplayStats,
   ScheduleStats,
   Playlist,
+  ReleaseNote,
+  DisplayHealth,
+  DisplayAlert,
 } from '../types';
 
 class ApiClient {
@@ -238,6 +241,36 @@ class ApiClient {
     await this.client.delete(`/displays/${id}`);
   }
 
+  async requestDisplayScreenshot(id: string): Promise<{ message: string }> {
+    const { data } = await this.client.post<{ message: string }>(`/displays/${id}/screenshot/request`);
+    return data;
+  }
+
+  async getLatestScreenshot(id: string): Promise<string> {
+    // Returns the URL to access the screenshot
+    return `/api/displays/${id}/screenshot/latest`;
+  }
+
+  // Health monitoring endpoints
+  async getDisplayHealth(id: string): Promise<DisplayHealth> {
+    const { data } = await this.client.get<DisplayHealth>(`/displays/${id}/health`);
+    return data;
+  }
+
+  async getAllDisplaysHealth(): Promise<DisplayHealth[]> {
+    const { data } = await this.client.get<DisplayHealth[]>('/displays/monitoring/health-all');
+    return data;
+  }
+
+  async getDisplayAlerts(): Promise<DisplayAlert[]> {
+    const { data } = await this.client.get<DisplayAlert[]>('/displays/monitoring/alerts');
+    return data;
+  }
+
+  async clearDisplayErrors(id: string): Promise<void> {
+    await this.client.delete(`/displays/${id}/errors`);
+  }
+
   async getDisplayStats(): Promise<DisplayStats> {
     const { data } = await this.client.get<DisplayStats>('/displays/stats');
     return data;
@@ -414,6 +447,108 @@ class ApiClient {
 
   async deletePlaylist(id: string): Promise<void> {
     await this.client.delete(`/playlists/${id}`);
+  }
+
+  // Release Notes endpoints
+  async getReleaseNotes(): Promise<ReleaseNote[]> {
+    const { data } = await this.client.get<ReleaseNote[]>('/release-notes');
+    return data;
+  }
+
+  async getReleaseNote(id: string): Promise<ReleaseNote> {
+    const { data } = await this.client.get<ReleaseNote>(`/release-notes/${id}`);
+    return data;
+  }
+
+  async createReleaseNote(noteData: {
+    version: string;
+    title: string;
+    content: string;
+    releaseDate: string;
+    isMajor?: boolean;
+  }): Promise<ReleaseNote> {
+    const { data } = await this.client.post<ReleaseNote>('/release-notes', noteData);
+    return data;
+  }
+
+  async updateReleaseNote(
+    id: string,
+    noteData: {
+      version?: string;
+      title?: string;
+      content?: string;
+      releaseDate?: string;
+      isMajor?: boolean;
+    },
+  ): Promise<ReleaseNote> {
+    const { data } = await this.client.patch<ReleaseNote>(`/release-notes/${id}`, noteData);
+    return data;
+  }
+
+  async deleteReleaseNote(id: string): Promise<void> {
+    await this.client.delete(`/release-notes/${id}`);
+  }
+
+  // Push Notifications endpoints
+  async getPushSubscriptions(): Promise<any[]> {
+    const { data } = await this.client.get('/push-notifications/subscriptions');
+    return data;
+  }
+
+  async sendTestNotification(): Promise<any> {
+    const { data } = await this.client.post('/push-notifications/test');
+    return data;
+  }
+
+  async broadcastNotification(payload: {
+    title: string;
+    body: string;
+    url?: string;
+    icon?: string;
+    badge?: string;
+    requireInteraction?: boolean;
+  }): Promise<any> {
+    const { data } = await this.client.post('/push-notifications/broadcast', payload);
+    return data;
+  }
+
+  async subscribeToPushNotifications(payload: {
+    endpoint: string;
+    keys: {
+      p256dh: string;
+      auth: string;
+    };
+    preferences?: {
+      displayOffline?: boolean;
+      displayOnline?: boolean;
+      highErrors?: boolean;
+      lowUptime?: boolean;
+      performanceIssues?: boolean;
+    };
+  }): Promise<any> {
+    const { data } = await this.client.post('/push-notifications/subscribe', payload);
+    return data;
+  }
+
+  async unsubscribeFromPushNotifications(endpoint: string): Promise<void> {
+    await this.client.delete(`/push-notifications/unsubscribe/${endpoint}`);
+  }
+
+  async updatePushNotificationPreferences(
+    endpoint: string,
+    preferences: {
+      displayOffline?: boolean;
+      displayOnline?: boolean;
+      highErrors?: boolean;
+      lowUptime?: boolean;
+      performanceIssues?: boolean;
+    }
+  ): Promise<any> {
+    const { data } = await this.client.patch(
+      `/push-notifications/preferences/${endpoint}`,
+      { preferences }
+    );
+    return data;
   }
 }
 

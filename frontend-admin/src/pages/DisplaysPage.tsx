@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Monitor, Plus, Trash2, Key, Circle, X, Copy, Check, Edit, Bug, Eye } from 'lucide-react';
+import { Monitor, Plus, Trash2, Key, Circle, X, Copy, Check, Edit, Bug, Eye, Camera } from 'lucide-react';
 import { api } from '../lib/api';
 import type { Display } from '../types';
 import DisplayPreviewModal from '../components/DisplayPreviewModal';
@@ -12,6 +12,8 @@ export default function DisplaysPage() {
   const [editingDisplay, setEditingDisplay] = useState<Display | null>(null);
   const [previewingDisplay, setPreviewingDisplay] = useState<Display | null>(null);
   const [debugEnabledDisplays, setDebugEnabledDisplays] = useState<Set<string>>(new Set());
+  const [screenshotDisplay, setScreenshotDisplay] = useState<Display | null>(null);
+  const [screenshotLoading, setScreenshotLoading] = useState(false);
 
   useEffect(() => {
     loadDisplays();
@@ -59,6 +61,21 @@ export default function DisplaysPage() {
       }
     } catch (err: any) {
       alert(err.response?.data?.message || 'Failed to toggle debug overlay');
+    }
+  };
+
+  const handleRequestScreenshot = async (display: Display) => {
+    setScreenshotLoading(true);
+    try {
+      await api.requestDisplayScreenshot(display.id);
+      // Wait a moment for the display to capture and upload
+      setTimeout(async () => {
+        setScreenshotDisplay(display);
+        setScreenshotLoading(false);
+      }, 2000);
+    } catch (err: any) {
+      setScreenshotLoading(false);
+      alert(err.response?.data?.message || 'Failed to request screenshot');
     }
   };
 
@@ -178,6 +195,15 @@ export default function DisplaysPage() {
                   Preview
                 </button>
                 <button
+                  onClick={() => handleRequestScreenshot(display)}
+                  className="flex-1 btn btn-secondary text-sm py-1.5 flex items-center justify-center gap-1"
+                  disabled={screenshotLoading}
+                  title="Capture screenshot from display"
+                >
+                  <Camera className="w-3.5 h-3.5" />
+                  {screenshotLoading ? 'Capturing...' : 'Screenshot'}
+                </button>
+                <button
                   onClick={() => setEditingDisplay(display)}
                   className="flex-1 btn btn-secondary text-sm py-1.5 flex items-center justify-center gap-1"
                 >
@@ -241,6 +267,44 @@ export default function DisplaysPage() {
           display={previewingDisplay}
           onClose={() => setPreviewingDisplay(null)}
         />
+      )}
+
+      {screenshotDisplay && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-4xl max-h-[90vh] overflow-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-gray-900">
+                Screenshot - {screenshotDisplay.name}
+              </h2>
+              <button onClick={() => setScreenshotDisplay(null)} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="bg-gray-100 rounded-lg p-4">
+              <img
+                src={`/api/displays/${screenshotDisplay.id}/screenshot/latest?t=${Date.now()}`}
+                alt={`Screenshot of ${screenshotDisplay.name}`}
+                className="w-full h-auto rounded shadow-lg"
+                onError={(e) => {
+                  e.currentTarget.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg"/>';
+                  e.currentTarget.alt = 'Screenshot not available';
+                }}
+              />
+            </div>
+            <div className="mt-4 flex justify-end gap-2">
+              <a
+                href={`/api/displays/${screenshotDisplay.id}/screenshot/latest`}
+                download={`screenshot-${screenshotDisplay.name}-${Date.now()}.png`}
+                className="btn btn-primary"
+              >
+                Download
+              </a>
+              <button onClick={() => setScreenshotDisplay(null)} className="btn btn-secondary">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
