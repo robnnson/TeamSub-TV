@@ -851,7 +851,7 @@ export default function Shell({ children, displayName, displayLocation, eventSou
               transition: 'opacity 1s ease-in-out',
               overflow: 'hidden',
             }}>
-            <h2 style={{ color: '#333', fontSize: '2.8em', marginBottom: '15px', borderBottom: '3px solid #667eea', paddingBottom: '10px' }}>
+            <h2 style={{ color: '#333', fontSize: '2em', marginBottom: '12px', borderBottom: '3px solid #667eea', paddingBottom: '8px' }}>
               Next Trains - Navy Yard
             </h2>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.5em', color: '#888', marginBottom: '10px' }}>
@@ -893,22 +893,22 @@ export default function Shell({ children, displayName, displayLocation, eventSou
             transition: 'opacity 1s ease-in-out',
             overflow: 'hidden',
           }}>
-            <h2 style={{ color: '#333', fontSize: '2.8em', marginBottom: '15px', borderBottom: '3px solid #667eea', paddingBottom: '10px' }}>
+            <h2 style={{ color: '#333', fontSize: '2em', marginBottom: '12px', borderBottom: '3px solid #667eea', paddingBottom: '8px' }}>
               Status Information
             </h2>
-            <div style={{ background: 'rgba(255, 255, 255, 0.5)', border: '2px solid #ddd', padding: '15px', borderRadius: '8px', marginBottom: '15px' }}>
-              <h3 style={{ fontSize: '1.5em', color: '#666', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+            <div style={{ background: 'rgba(255, 255, 255, 0.5)', border: '2px solid #ddd', padding: '12px', borderRadius: '8px', marginBottom: '12px' }}>
+              <h3 style={{ fontSize: '1.1em', color: '#666', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '1px' }}>
                 Force Protection Condition
               </h3>
-              <div style={{ fontSize: '3.5em', fontWeight: 600, letterSpacing: '1px', color: fpconStatus.color }}>
+              <div style={{ fontSize: '2.5em', fontWeight: 600, letterSpacing: '1px', color: fpconStatus.color }}>
                 {fpconStatus.status}
               </div>
             </div>
-            <div style={{ background: 'rgba(255, 255, 255, 0.5)', border: '2px solid #ddd', padding: '15px', borderRadius: '8px' }}>
-              <h3 style={{ fontSize: '1.5em', color: '#666', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+            <div style={{ background: 'rgba(255, 255, 255, 0.5)', border: '2px solid #ddd', padding: '12px', borderRadius: '8px' }}>
+              <h3 style={{ fontSize: '1.1em', color: '#666', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '1px' }}>
                 Network Status
               </h3>
-              <div style={{ fontSize: '3.5em', fontWeight: 600, letterSpacing: '1px', color: lanStatus.color }}>
+              <div style={{ fontSize: '2.5em', fontWeight: 600, letterSpacing: '1px', color: lanStatus.color }}>
                 {lanStatus.status}
               </div>
             </div>
@@ -927,26 +927,26 @@ export default function Shell({ children, displayName, displayLocation, eventSou
             transition: 'opacity 1s ease-in-out',
             overflow: 'hidden',
           }}>
-            <h2 style={{ color: '#333', fontSize: '2.8em', marginBottom: '15px', borderBottom: '3px solid #667eea', paddingBottom: '10px' }}>
+            <h2 style={{ color: '#333', fontSize: '2em', marginBottom: '12px', borderBottom: '3px solid #667eea', paddingBottom: '8px' }}>
               Driving Times
             </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', maxHeight: 'calc(100% - 60px)' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto', maxHeight: 'calc(100% - 60px)' }}>
               {driveTimes.length > 0 ? driveTimes.map((drive, i) => (
                 <div key={i} style={{
                   background: 'linear-gradient(to right, #f5f7fa, #c3cfe2)',
-                  padding: '12px',
+                  padding: '10px',
                   borderRadius: '8px',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '5px',
+                  gap: '4px',
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '1.6em', fontWeight: 'bold', color: '#333' }}>{drive.name}</span>
-                    <span style={{ fontSize: '1.6em', color: '#667eea', fontWeight: 'bold' }}>{drive.minutes} min</span>
+                    <span style={{ fontSize: '1.2em', fontWeight: 'bold', color: '#333' }}>{drive.name}</span>
+                    <span style={{ fontSize: '1.2em', color: '#667eea', fontWeight: 'bold' }}>{drive.minutes} min</span>
                   </div>
-                  <div style={{ fontSize: '1.3em', color: '#666' }}>Arrives approx. at {drive.arrival}</div>
+                  <div style={{ fontSize: '1em', color: '#666' }}>Arrives approx. at {drive.arrival}</div>
                 </div>
-              )) : <div style={{ padding: '12px', color: '#666', fontSize: '1.5em' }}>Loading driving times...</div>}
+              )) : <div style={{ padding: '10px', color: '#666', fontSize: '1.1em' }}>Loading driving times...</div>}
             </div>
           </div>
           )}
@@ -963,35 +963,35 @@ export default function Shell({ children, displayName, displayLocation, eventSou
             transition: 'opacity 1s ease-in-out',
             overflow: 'hidden',
           }}>
-            <h2 style={{ color: '#333', fontSize: '2.8em', marginBottom: '15px', borderBottom: '3px solid #667eea', paddingBottom: '10px' }}>
+            <h2 style={{ color: '#333', fontSize: '2em', marginBottom: '12px', borderBottom: '3px solid #667eea', paddingBottom: '8px' }}>
               Capital Bikeshare - Navy Yard
             </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '20px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '15px' }}>
               {bikeStations.length > 0 ? (
                 <>
                   <div style={{
                     background: 'linear-gradient(to right, #e8f5e9, #c8e6c9)',
-                    padding: '20px',
+                    padding: '15px',
                     borderRadius: '12px',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '20px',
+                    gap: '15px',
                   }}>
-                    <img src="/cabi.svg" alt="Capital Bikeshare" style={{ width: '100px', height: '100px' }} />
+                    <img src="/cabi.svg" alt="Capital Bikeshare" style={{ width: '70px', height: '70px' }} />
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '1.8em', fontWeight: 'bold', color: '#1b5e20', marginBottom: '10px' }}>
+                      <div style={{ fontSize: '1.3em', fontWeight: 'bold', color: '#1b5e20', marginBottom: '8px' }}>
                         {bikeStations[0]?.name || 'Station 1'}
                       </div>
-                      <div style={{ display: 'flex', gap: '30px' }}>
+                      <div style={{ display: 'flex', gap: '20px' }}>
                         <div>
-                          <div style={{ fontSize: '1.3em', color: '#666' }}>Bikes Available</div>
-                          <div style={{ fontSize: '3em', fontWeight: 'bold', color: '#2e7d32' }}>
+                          <div style={{ fontSize: '1em', color: '#666' }}>Bikes Available</div>
+                          <div style={{ fontSize: '2.2em', fontWeight: 'bold', color: '#2e7d32' }}>
                             {bikeStations[0]?.bikes || 0}
                           </div>
                         </div>
                         <div>
-                          <div style={{ fontSize: '1.3em', color: '#666' }}>Docks Available</div>
-                          <div style={{ fontSize: '3em', fontWeight: 'bold', color: '#1565c0' }}>
+                          <div style={{ fontSize: '1em', color: '#666' }}>Docks Available</div>
+                          <div style={{ fontSize: '2.2em', fontWeight: 'bold', color: '#1565c0' }}>
                             {bikeStations[0]?.docks || 0}
                           </div>
                         </div>
@@ -1002,25 +1002,25 @@ export default function Shell({ children, displayName, displayLocation, eventSou
                   {bikeStations.slice(1).map((station, i) => (
                     <div key={i} style={{
                       background: 'linear-gradient(to right, #f5f7fa, #c3cfe2)',
-                      padding: '15px 20px',
+                      padding: '12px 15px',
                       borderRadius: '10px',
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',
                     }}>
-                      <div style={{ fontSize: '1.5em', fontWeight: 'bold', color: '#333' }}>
+                      <div style={{ fontSize: '1.1em', fontWeight: 'bold', color: '#333' }}>
                         {station.name}
                       </div>
-                      <div style={{ display: 'flex', gap: '40px' }}>
+                      <div style={{ display: 'flex', gap: '25px' }}>
                         <div style={{ textAlign: 'center' }}>
-                          <div style={{ fontSize: '1.2em', color: '#666' }}>Bikes</div>
-                          <div style={{ fontSize: '2.2em', fontWeight: 'bold', color: '#2e7d32' }}>
+                          <div style={{ fontSize: '0.9em', color: '#666' }}>Bikes</div>
+                          <div style={{ fontSize: '1.6em', fontWeight: 'bold', color: '#2e7d32' }}>
                             {station.bikes}
                           </div>
                         </div>
                         <div style={{ textAlign: 'center' }}>
-                          <div style={{ fontSize: '1.2em', color: '#666' }}>Docks</div>
-                          <div style={{ fontSize: '2.2em', fontWeight: 'bold', color: '#1565c0' }}>
+                          <div style={{ fontSize: '0.9em', color: '#666' }}>Docks</div>
+                          <div style={{ fontSize: '1.6em', fontWeight: 'bold', color: '#1565c0' }}>
                             {station.docks}
                           </div>
                         </div>
@@ -1029,10 +1029,10 @@ export default function Shell({ children, displayName, displayLocation, eventSou
                   ))}
                 </>
               ) : (
-                <div style={{ padding: '12px', color: '#666', fontSize: '1.5em' }}>Loading bikeshare data...</div>
+                <div style={{ padding: '10px', color: '#666', fontSize: '1.1em' }}>Loading bikeshare data...</div>
               )}
             </div>
-            <div style={{ marginTop: '20px', fontSize: '1.2em', color: '#888', textAlign: 'center' }}>
+            <div style={{ marginTop: '15px', fontSize: '0.9em', color: '#888', textAlign: 'center' }}>
               Updates every minute
             </div>
           </div>
