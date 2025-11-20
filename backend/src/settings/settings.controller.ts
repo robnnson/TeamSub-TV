@@ -12,7 +12,7 @@ import {
 import { SettingsService } from './settings.service';
 import { CreateSettingDto } from './dto/create-setting.dto';
 import { UpdateSettingDto } from './dto/update-setting.dto';
-import { UpdateFpconDto, UpdateLanDto, UpdateApiKeyDto } from './dto/update-status.dto';
+import { UpdateFpconDto, UpdateLanDto, UpdateApiKeyDto, UpdateDisplayFeaturesDto } from './dto/update-status.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { FlexibleAuthGuard } from '../common/guards/flexible-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -121,5 +121,54 @@ export class SettingsController {
   ) {
     await this.settingsService.setApiKey(service, dto.apiKey);
     return { service, message: 'API key updated successfully' };
+  }
+
+  // Display Features Settings
+  @Public()
+  @Get('display/features')
+  async getDisplayFeatures() {
+    const showTicker = await this.settingsService.getDisplayFeature('show_ticker');
+    const showRotatingCards = await this.settingsService.getDisplayFeature('show_rotating_cards');
+    const showMetroCard = await this.settingsService.getDisplayFeature('show_metro_card');
+    const showStatusCard = await this.settingsService.getDisplayFeature('show_status_card');
+    const showDrivingCard = await this.settingsService.getDisplayFeature('show_driving_card');
+    const showBikeshareCard = await this.settingsService.getDisplayFeature('show_bikeshare_card');
+    const showNewsHeadlines = await this.settingsService.getDisplayFeature('show_news_headlines');
+    return {
+      showTicker: showTicker === 'true',
+      showRotatingCards: showRotatingCards === 'true',
+      showMetroCard: showMetroCard === 'true',
+      showStatusCard: showStatusCard === 'true',
+      showDrivingCard: showDrivingCard === 'true',
+      showBikeshareCard: showBikeshareCard === 'true',
+      showNewsHeadlines: showNewsHeadlines === 'true'
+    };
+  }
+
+  @Patch('display/features')
+  @Roles(UserRole.ADMIN)
+  async updateDisplayFeatures(@Body() dto: UpdateDisplayFeaturesDto) {
+    if (dto.showTicker !== undefined) {
+      await this.settingsService.setDisplayFeature('show_ticker', String(dto.showTicker));
+    }
+    if (dto.showRotatingCards !== undefined) {
+      await this.settingsService.setDisplayFeature('show_rotating_cards', String(dto.showRotatingCards));
+    }
+    if (dto.showMetroCard !== undefined) {
+      await this.settingsService.setDisplayFeature('show_metro_card', String(dto.showMetroCard));
+    }
+    if (dto.showStatusCard !== undefined) {
+      await this.settingsService.setDisplayFeature('show_status_card', String(dto.showStatusCard));
+    }
+    if (dto.showDrivingCard !== undefined) {
+      await this.settingsService.setDisplayFeature('show_driving_card', String(dto.showDrivingCard));
+    }
+    if (dto.showBikeshareCard !== undefined) {
+      await this.settingsService.setDisplayFeature('show_bikeshare_card', String(dto.showBikeshareCard));
+    }
+    if (dto.showNewsHeadlines !== undefined) {
+      await this.settingsService.setDisplayFeature('show_news_headlines', String(dto.showNewsHeadlines));
+    }
+    return { message: 'Display features updated successfully', ...dto };
   }
 }

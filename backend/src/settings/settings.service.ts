@@ -171,4 +171,30 @@ export class SettingsService {
       await this.create(key, apiKey, true, `API key for ${service}`);
     }
   }
+
+  // Display Features
+  async getDisplayFeature(feature: string): Promise<string> {
+    try {
+      return await this.getValue(feature);
+    } catch {
+      // Default to 'true' (show features by default)
+      return 'true';
+    }
+  }
+
+  async setDisplayFeature(feature: string, value: string): Promise<void> {
+    const exists = await this.settingsRepository.findOne({ where: { key: feature } });
+
+    if (exists) {
+      await this.update(feature, value);
+    } else {
+      await this.create(feature, value, false, `Display feature: ${feature}`);
+    }
+
+    // Emit event for displays to update
+    this.eventEmitter.emit('settings.display.changed', {
+      feature,
+      value,
+    });
+  }
 }

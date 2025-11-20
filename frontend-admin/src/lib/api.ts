@@ -411,6 +411,58 @@ class ApiClient {
     return data;
   }
 
+  async getDisplayFeatures(): Promise<{
+    showTicker: boolean;
+    showRotatingCards: boolean;
+    showMetroCard: boolean;
+    showStatusCard: boolean;
+    showDrivingCard: boolean;
+    showBikeshareCard: boolean;
+    showNewsHeadlines: boolean;
+  }> {
+    const { data } = await this.client.get<{
+      showTicker: boolean;
+      showRotatingCards: boolean;
+      showMetroCard: boolean;
+      showStatusCard: boolean;
+      showDrivingCard: boolean;
+      showBikeshareCard: boolean;
+      showNewsHeadlines: boolean;
+    }>('/settings/display/features');
+    return data;
+  }
+
+  async updateDisplayFeatures(features: {
+    showTicker?: boolean;
+    showRotatingCards?: boolean;
+    showMetroCard?: boolean;
+    showStatusCard?: boolean;
+    showDrivingCard?: boolean;
+    showBikeshareCard?: boolean;
+    showNewsHeadlines?: boolean;
+  }): Promise<{
+    message: string;
+    showTicker?: boolean;
+    showRotatingCards?: boolean;
+    showMetroCard?: boolean;
+    showStatusCard?: boolean;
+    showDrivingCard?: boolean;
+    showBikeshareCard?: boolean;
+    showNewsHeadlines?: boolean;
+  }> {
+    const { data } = await this.client.patch<{
+      message: string;
+      showTicker?: boolean;
+      showRotatingCards?: boolean;
+      showMetroCard?: boolean;
+      showStatusCard?: boolean;
+      showDrivingCard?: boolean;
+      showBikeshareCard?: boolean;
+      showNewsHeadlines?: boolean;
+    }>('/settings/display/features', features);
+    return data;
+  }
+
   // Playlists endpoints
   async getPlaylists(): Promise<Playlist[]> {
     const { data } = await this.client.get<Playlist[]>('/playlists');

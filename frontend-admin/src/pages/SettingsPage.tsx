@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Shield, Wifi, AlertTriangle, Save, RefreshCw } from 'lucide-react';
+import { Shield, Wifi, AlertTriangle, Save, RefreshCw, Monitor, MessageSquare, RotateCcw, Train, Activity, Car, Bike, Newspaper } from 'lucide-react';
 import { api } from '../lib/api';
 
 const FPCON_LEVELS = ['NORMAL', 'ALPHA', 'BRAVO', 'CHARLIE', 'DELTA'];
@@ -8,10 +8,19 @@ const LAN_STATUSES = ['NORMAL', 'DEGRADED', 'OUTAGE'];
 export default function SettingsPage() {
   const [fpconStatus, setFpconStatus] = useState('');
   const [lanStatus, setLanStatus] = useState('');
+  const [showTicker, setShowTicker] = useState(true);
+  const [showRotatingCards, setShowRotatingCards] = useState(true);
+  const [showMetroCard, setShowMetroCard] = useState(true);
+  const [showStatusCard, setShowStatusCard] = useState(true);
+  const [showDrivingCard, setShowDrivingCard] = useState(true);
+  const [showBikeshareCard, setShowBikeshareCard] = useState(true);
+  const [showNewsHeadlines, setShowNewsHeadlines] = useState(true);
   const [loadingFpcon, setLoadingFpcon] = useState(true);
   const [loadingLan, setLoadingLan] = useState(true);
+  const [loadingDisplay, setLoadingDisplay] = useState(true);
   const [savingFpcon, setSavingFpcon] = useState(false);
   const [savingLan, setSavingLan] = useState(false);
+  const [savingDisplay, setSavingDisplay] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -23,20 +32,30 @@ export default function SettingsPage() {
     try {
       setLoadingFpcon(true);
       setLoadingLan(true);
+      setLoadingDisplay(true);
       setError('');
 
-      const [fpcon, lan] = await Promise.all([
+      const [fpcon, lan, displayFeatures] = await Promise.all([
         api.getFpconStatus(),
         api.getLanStatus(),
+        api.getDisplayFeatures(),
       ]);
 
       setFpconStatus(fpcon.status);
       setLanStatus(lan.status);
+      setShowTicker(displayFeatures.showTicker);
+      setShowRotatingCards(displayFeatures.showRotatingCards);
+      setShowMetroCard(displayFeatures.showMetroCard);
+      setShowStatusCard(displayFeatures.showStatusCard);
+      setShowDrivingCard(displayFeatures.showDrivingCard);
+      setShowBikeshareCard(displayFeatures.showBikeshareCard);
+      setShowNewsHeadlines(displayFeatures.showNewsHeadlines);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to load status settings');
     } finally {
       setLoadingFpcon(false);
       setLoadingLan(false);
+      setLoadingDisplay(false);
     }
   };
 
@@ -69,6 +88,30 @@ export default function SettingsPage() {
       setError(err.response?.data?.message || 'Failed to update LAN status');
     } finally {
       setSavingLan(false);
+    }
+  };
+
+  const handleSaveDisplayFeatures = async () => {
+    try {
+      setSavingDisplay(true);
+      setError('');
+      setSuccess('');
+
+      await api.updateDisplayFeatures({
+        showTicker,
+        showRotatingCards,
+        showMetroCard,
+        showStatusCard,
+        showDrivingCard,
+        showBikeshareCard,
+        showNewsHeadlines
+      });
+      setSuccess('Display features updated successfully');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to update display features');
+    } finally {
+      setSavingDisplay(false);
     }
   };
 
@@ -145,7 +188,7 @@ export default function SettingsPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* FPCON Status */}
         <div className="card">
           <div className="flex items-center gap-3 mb-4">
@@ -311,6 +354,201 @@ export default function SettingsPage() {
 
               <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-800">
                 <strong>Note:</strong> Network status updates will be reflected on information displays throughout the facility.
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Display Features */}
+        <div className="card">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-3 rounded-lg bg-indigo-500">
+              <Monitor className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Display Features</h2>
+              <p className="text-sm text-gray-500">Control display elements</p>
+            </div>
+          </div>
+
+          {loadingDisplay ? (
+            <div className="animate-pulse space-y-3">
+              <div className="h-16 bg-gray-200 rounded"></div>
+              <div className="h-16 bg-gray-200 rounded"></div>
+            </div>
+          ) : (
+            <>
+              <div className="space-y-4 mb-4">
+                {/* News Ticker Toggle */}
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="flex items-center gap-3">
+                    <MessageSquare className="w-5 h-5 text-indigo-600" />
+                    <div>
+                      <p className="font-medium text-gray-900">Ticker Banner</p>
+                      <p className="text-sm text-gray-500">Show scrolling ticker at bottom of display</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowTicker(!showTicker)}
+                    className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
+                      showTicker ? 'bg-indigo-600' : 'bg-gray-300'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
+                        showTicker ? 'translate-x-7' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {/* News Headlines Toggle - Only show when ticker is enabled */}
+                {showTicker && (
+                  <div className="ml-8 flex items-center justify-between p-3 bg-gray-100 rounded-lg border border-gray-300">
+                    <div className="flex items-center gap-3">
+                      <Newspaper className="w-4 h-4 text-indigo-500" />
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">Navy/DoD News Headlines</p>
+                        <p className="text-xs text-gray-500">Show RSS news headlines in ticker</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setShowNewsHeadlines(!showNewsHeadlines)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        showNewsHeadlines ? 'bg-indigo-600' : 'bg-gray-300'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          showNewsHeadlines ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                )}
+
+                {/* Rotating Cards Toggle */}
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="flex items-center gap-3">
+                    <RotateCcw className="w-5 h-5 text-indigo-600" />
+                    <div>
+                      <p className="font-medium text-gray-900">Rotating Cards</p>
+                      <p className="text-sm text-gray-500">Show Metro, Status, Driving Times, and Bikeshare panels</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowRotatingCards(!showRotatingCards)}
+                    className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
+                      showRotatingCards ? 'bg-indigo-600' : 'bg-gray-300'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
+                        showRotatingCards ? 'translate-x-7' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {/* Individual Card Toggles - Only show when rotating cards are enabled */}
+                {showRotatingCards && (
+                  <div className="ml-8 space-y-3 mt-3 p-4 bg-gray-100 rounded-lg border border-gray-300">
+                    <p className="text-sm font-medium text-gray-700 mb-2">Individual Card Settings:</p>
+
+                    {/* Metro Card */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Train className="w-4 h-4 text-indigo-500" />
+                        <span className="text-sm text-gray-900">Metro Arrivals</span>
+                      </div>
+                      <button
+                        onClick={() => setShowMetroCard(!showMetroCard)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                          showMetroCard ? 'bg-indigo-600' : 'bg-gray-300'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            showMetroCard ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {/* Status Card */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Activity className="w-4 h-4 text-indigo-500" />
+                        <span className="text-sm text-gray-900">FPCON/LAN Status</span>
+                      </div>
+                      <button
+                        onClick={() => setShowStatusCard(!showStatusCard)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                          showStatusCard ? 'bg-indigo-600' : 'bg-gray-300'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            showStatusCard ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {/* Driving Times Card */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Car className="w-4 h-4 text-indigo-500" />
+                        <span className="text-sm text-gray-900">Driving Times</span>
+                      </div>
+                      <button
+                        onClick={() => setShowDrivingCard(!showDrivingCard)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                          showDrivingCard ? 'bg-indigo-600' : 'bg-gray-300'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            showDrivingCard ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {/* Bikeshare Card */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Bike className="w-4 h-4 text-indigo-500" />
+                        <span className="text-sm text-gray-900">Capital Bikeshare</span>
+                      </div>
+                      <button
+                        onClick={() => setShowBikeshareCard(!showBikeshareCard)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                          showBikeshareCard ? 'bg-indigo-600' : 'bg-gray-300'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            showBikeshareCard ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <button
+                onClick={handleSaveDisplayFeatures}
+                disabled={savingDisplay}
+                className="btn btn-primary w-full flex items-center justify-center gap-2"
+              >
+                <Save className="w-4 h-4" />
+                {savingDisplay ? 'Updating...' : 'Update Display Features'}
+              </button>
+
+              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-800">
+                <strong>Note:</strong> Display feature changes will take effect immediately on all connected displays via real-time updates.
               </div>
             </>
           )}

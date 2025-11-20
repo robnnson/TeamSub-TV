@@ -20,16 +20,39 @@ export default function Shell({ children, displayName, displayLocation, eventSou
   const [clockDate, setClockDate] = useState('');
   const [currentBanner, setCurrentBanner] = useState(0);
   const [currentTransitSlide, setCurrentTransitSlide] = useState(0);
+
+  // Helper function to calculate slide index for enabled cards
+  const getSlideIndex = (cardName: 'metro' | 'status' | 'driving' | 'bikeshare'): number => {
+    const cards = [
+      { name: 'metro', enabled: displaySettings.showMetroCard },
+      { name: 'status', enabled: displaySettings.showStatusCard },
+      { name: 'driving', enabled: displaySettings.showDrivingCard },
+      { name: 'bikeshare', enabled: displaySettings.showBikeshareCard }
+    ];
+    const enabledCards = cards.filter(c => c.enabled);
+    return enabledCards.findIndex(c => c.name === cardName);
+  };
   const [weather, setWeather] = useState({ temp: '--', desc: 'Loading...', icon: '', humidity: '--', wind: '--' });
   const [forecast, setForecast] = useState<ForecastDay[]>([]);
   const [trains, setTrains] = useState<any[]>([]);
   const [driveTimes, setDriveTimes] = useState<any[]>([]);
+  const [bikeStations, setBikeStations] = useState<any[]>([]);
+  const [newsHeadlines, setNewsHeadlines] = useState<string[]>([]);
   const [fpconStatus, setFpconStatus] = useState({ status: 'LOADING...', color: '#666' });
   const [lanStatus, setLanStatus] = useState({ status: 'LOADING...', color: '#666' });
   const [tickerMessages, setTickerMessages] = useState<string[]>([
     'Welcome to Team Sub TV',
     'Metro Arrivals Updated Every 30s',
   ]);
+  const [displaySettings, setDisplaySettings] = useState({
+    showTicker: true,
+    showRotatingCards: true,
+    showMetroCard: true,
+    showStatusCard: true,
+    showDrivingCard: true,
+    showBikeshareCard: true,
+    showNewsHeadlines: true
+  });
 
   const banners = [
     '/img/Team-Sub Navigator Banner_JAN-FEB-MAR.jpg',
@@ -64,10 +87,20 @@ export default function Shell({ children, displayName, displayLocation, eventSou
   // Rotate transit slides every 10 seconds
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentTransitSlide((prev) => (prev + 1) % 3); // 3 slides: metro, status, driving
+      // Count enabled cards to determine max slides
+      const enabledCards = [
+        displaySettings.showMetroCard,
+        displaySettings.showStatusCard,
+        displaySettings.showDrivingCard,
+        displaySettings.showBikeshareCard
+      ].filter(Boolean).length;
+
+      if (enabledCards > 0) {
+        setCurrentTransitSlide((prev) => (prev + 1) % enabledCards);
+      }
     }, 10000);
     return () => clearInterval(interval);
-  }, []);
+  }, [displaySettings]);
 
   // Fetch weather
   useEffect(() => {
@@ -214,6 +247,128 @@ export default function Shell({ children, displayName, displayLocation, eventSou
     return () => clearInterval(interval);
   }, []);
 
+  // Fetch Capital Bikeshare availability
+  useEffect(() => {
+    const fetchBikeshare = async () => {
+      try {
+        console.log('Fetching bikeshare data...');
+
+        // Fetch both station info (names) and station status (availability)
+        const [statusRes, infoRes] = await Promise.all([
+          fetch('https://gbfs.capitalbikeshare.com/gbfs/en/station_status.json'),
+          fetch('https://gbfs.capitalbikeshare.com/gbfs/en/station_information.json')
+        ]);
+
+        if (!statusRes.ok || !infoRes.ok) {
+          throw new Error(`HTTP error! status: ${statusRes.status}`);
+        }
+
+        const statusData = await statusRes.json();
+        const infoData = await infoRes.json();
+        console.log('Bikeshare API response received');
+
+        if (!statusData.data || !statusData.data.stations || !infoData.data || !infoData.data.stations) {
+          console.error('Invalid bikeshare data structure');
+          return;
+        }
+
+        // Navy Yard area station short_names (these are in the info API)
+        const navyYardShortNames = ['31228', '31229', '31226', '31227', '31230'];
+
+        // First, find the station_ids for our desired short_names
+        const targetStationIds = infoData.data.stations
+          .filter((station: any) => navyYardShortNames.includes(String(station.short_name)))
+          .map((station: any) => station.station_id);
+
+        console.log('Target station IDs:', targetStationIds);
+
+        // Create a map of station info by station_id (UUID)
+        const stationInfoMap = new Map();
+        infoData.data.stations.forEach((station: any) => {
+          stationInfoMap.set(station.station_id, station);
+        });
+
+        // Filter status data by our target station_ids and merge with info
+        let stationsData = statusData.data.stations
+          .filter((station: any) => targetStationIds.includes(station.station_id))
+          .map((station: any) => {
+            const info = stationInfoMap.get(station.station_id);
+            return {
+              id: info?.short_name || station.station_id,
+              name: info?.name || 'Unknown Station',
+              bikes: station.num_bikes_available || 0,
+              docks: station.num_docks_available || 0,
+            };
+          });
+
+        console.log('Filtered bikeshare stations:', stationsData);
+
+        // Fallback: use first 3 stations if none found
+        if (stationsData.length === 0) {
+          console.warn('No Navy Yard stations found, using first 3 stations');
+          stationsData = statusData.data.stations.slice(0, 3).map((station: any) => {
+            const info = stationInfoMap.get(station.station_id);
+            return {
+              id: info?.short_name || 'Unknown',
+              name: info?.name || 'Unknown Station',
+              bikes: station.num_bikes_available || 0,
+              docks: station.num_docks_available || 0,
+            };
+          });
+        }
+
+        setBikeStations(stationsData);
+      } catch (err) {
+        console.error('Failed to fetch bikeshare data:', err);
+        // Set dummy data
+        setBikeStations([
+          { id: 'Error', name: 'Service Unavailable', bikes: 0, docks: 0 },
+          { id: 'Error', name: 'Service Unavailable', bikes: 0, docks: 0 },
+        ]);
+      }
+    };
+
+    fetchBikeshare();
+    const interval = setInterval(fetchBikeshare, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Fetch Navy/DoD News RSS Feed
+  useEffect(() => {
+    const fetchNews = async () => {
+      try {
+        console.log('Fetching news headlines...');
+        // Try RSS2JSON service (free tier, no API key needed for basic usage)
+        const rssUrl = encodeURIComponent('https://www.navy.mil/Press-Office/News-Stories/rss.xml');
+        const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${rssUrl}&count=5`);
+        const data = await res.json();
+
+        console.log('News API response:', data);
+
+        if (data.status === 'ok' && data.items && data.items.length > 0) {
+          const headlines = data.items.map((item: any) => item.title);
+          console.log('News headlines:', headlines);
+          setNewsHeadlines(headlines);
+        } else {
+          throw new Error('No news items found');
+        }
+      } catch (err) {
+        console.error('Failed to fetch news:', err);
+        // Set static headlines immediately
+        setNewsHeadlines([
+          'Welcome to Team Sub TV',
+          'Navy News available at navy.mil',
+          'DoD News available at defense.gov',
+          'Check back for updated headlines',
+        ]);
+      }
+    };
+
+    fetchNews();
+    const interval = setInterval(fetchNews, 600000); // Update every 10 minutes
+    return () => clearInterval(interval);
+  }, []);
+
   // Fetch FPCON status from backend
   useEffect(() => {
     const fetchFpconStatus = async () => {
@@ -296,6 +451,23 @@ export default function Shell({ children, displayName, displayLocation, eventSou
     fetchTickerMessages();
   }, []);
 
+  // Fetch display features settings
+  useEffect(() => {
+    const fetchDisplaySettings = async () => {
+      try {
+        const res = await fetch('/api/settings/display/features');
+        const data = await res.json();
+        console.log('Display settings loaded:', data);
+        setDisplaySettings(data);
+      } catch (err) {
+        console.error('Failed to load display settings:', err);
+        // Keep default settings on error (both enabled)
+      }
+    };
+
+    fetchDisplaySettings();
+  }, []);
+
   // Listen for FPCON/LAN/Ticker status changes via SSE
   useEffect(() => {
     if (!eventSource) return;
@@ -340,14 +512,37 @@ export default function Shell({ children, displayName, displayLocation, eventSou
       }
     };
 
+    const handleDisplayChange = (e: MessageEvent) => {
+      const data = JSON.parse(e.data);
+      console.log('Display feature changed via SSE:', data);
+
+      // Update the specific setting that changed
+      const featureMap: Record<string, keyof typeof displaySettings> = {
+        'show_ticker': 'showTicker',
+        'show_rotating_cards': 'showRotatingCards',
+        'show_metro_card': 'showMetroCard',
+        'show_status_card': 'showStatusCard',
+        'show_driving_card': 'showDrivingCard',
+        'show_bikeshare_card': 'showBikeshareCard',
+        'show_news_headlines': 'showNewsHeadlines'
+      };
+
+      const settingKey = featureMap[data.feature];
+      if (settingKey) {
+        setDisplaySettings(prev => ({ ...prev, [settingKey]: data.value === 'true' }));
+      }
+    };
+
     eventSource.addEventListener('fpcon.changed', handleFpconChange);
     eventSource.addEventListener('lan.changed', handleLanChange);
     eventSource.addEventListener('settings.changed', handleSettingsChange);
+    eventSource.addEventListener('settings.display.changed', handleDisplayChange);
 
     return () => {
       eventSource.removeEventListener('fpcon.changed', handleFpconChange);
       eventSource.removeEventListener('lan.changed', handleLanChange);
       eventSource.removeEventListener('settings.changed', handleSettingsChange);
+      eventSource.removeEventListener('settings.display.changed', handleDisplayChange);
     };
   }, [eventSource]);
 
@@ -432,38 +627,46 @@ export default function Shell({ children, displayName, displayLocation, eventSou
             {children}
           </div>
 
-          {/* Announcements Ticker */}
-          <div style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            background: 'rgba(0, 40, 85, 0.95)',
-            color: 'white',
-            padding: '15px 0',
-            overflow: 'hidden',
-            borderRadius: '0 0 15px 15px',
-          }}>
+          {/* Announcements Ticker - Conditionally rendered */}
+          {displaySettings.showTicker && (
             <div style={{
-              display: 'inline-block',
-              whiteSpace: 'nowrap',
-              paddingLeft: '100%',
-              animation: 'scroll-left 30s linear infinite',
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              background: 'rgba(0, 40, 85, 0.95)',
+              color: 'white',
+              padding: '15px 0',
+              overflow: 'hidden',
+              borderRadius: '0 0 15px 15px',
             }}>
-              {/* Display name/location as first message if available */}
-              {displayName && displayLocation && (
-                <span style={{ fontSize: '2.2em', marginRight: '50px' }}>
-                  ● {displayName} - {displayLocation}
-                </span>
-              )}
-              {/* Dynamic ticker messages from backend */}
-              {tickerMessages.map((message, index) => (
-                <span key={index} style={{ fontSize: '2.2em', marginRight: '50px' }}>
-                  ● {message}
-                </span>
-              ))}
+              <div style={{
+                display: 'inline-block',
+                whiteSpace: 'nowrap',
+                paddingLeft: '100%',
+                animation: 'scroll-left 30s linear infinite',
+              }}>
+                {/* Display name/location as first message if available */}
+                {displayName && displayLocation && (
+                  <span style={{ fontSize: '2.2em', marginRight: '50px' }}>
+                    ● {displayName} - {displayLocation}
+                  </span>
+                )}
+                {/* Dynamic ticker messages from backend */}
+                {tickerMessages.map((message, index) => (
+                  <span key={index} style={{ fontSize: '2.2em', marginRight: '50px' }}>
+                    ● {message}
+                  </span>
+                ))}
+                {/* Navy/DoD News Headlines - Conditionally rendered */}
+                {displaySettings.showNewsHeadlines && newsHeadlines.map((headline, index) => (
+                  <span key={`news-${index}`} style={{ fontSize: '2.2em', marginRight: '50px', color: '#ffd700' }}>
+                    📰 {headline}
+                  </span>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Weather Card (Top right) - Modern Clean Design */}
@@ -626,26 +829,28 @@ export default function Shell({ children, displayName, displayLocation, eventSou
           </div>
         </div>
 
-        {/* Transit Times (Bottom right) - Rotating content */}
-        <div style={{
-          background: 'rgba(255, 255, 255, 0.95)',
-          borderRadius: '15px',
-          padding: '20px',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-          position: 'relative',
-          overflow: 'hidden',
-        }}>
-          {/* Metro Slide */}
+        {/* Transit Times (Bottom right) - Rotating content - Conditionally rendered */}
+        {displaySettings.showRotatingCards && (
           <div style={{
-            position: 'absolute',
-            top: '20px',
-            left: '20px',
-            right: '20px',
-            bottom: '20px',
-            opacity: currentTransitSlide === 0 ? 1 : 0,
-            transition: 'opacity 1s ease-in-out',
+            background: 'rgba(255, 255, 255, 0.95)',
+            borderRadius: '15px',
+            padding: '20px',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+            position: 'relative',
             overflow: 'hidden',
           }}>
+          {/* Metro Slide */}
+          {displaySettings.showMetroCard && (
+            <div style={{
+              position: 'absolute',
+              top: '20px',
+              left: '20px',
+              right: '20px',
+              bottom: '20px',
+              opacity: currentTransitSlide === getSlideIndex('metro') ? 1 : 0,
+              transition: 'opacity 1s ease-in-out',
+              overflow: 'hidden',
+            }}>
             <h2 style={{ color: '#333', fontSize: '2.8em', marginBottom: '15px', borderBottom: '3px solid #667eea', paddingBottom: '10px' }}>
               Next Trains - Navy Yard
             </h2>
@@ -673,16 +878,18 @@ export default function Shell({ children, displayName, displayLocation, eventSou
                 </div>
               )) : <div style={{ padding: '12px', color: '#666', fontSize: '1.5em' }}>No upcoming trains.</div>}
             </div>
-          </div>
+            </div>
+          )}
 
           {/* Status Slide */}
+          {displaySettings.showStatusCard && (
           <div style={{
             position: 'absolute',
             top: '20px',
             left: '20px',
             right: '20px',
             bottom: '20px',
-            opacity: currentTransitSlide === 1 ? 1 : 0,
+            opacity: currentTransitSlide === getSlideIndex('status') ? 1 : 0,
             transition: 'opacity 1s ease-in-out',
             overflow: 'hidden',
           }}>
@@ -706,15 +913,17 @@ export default function Shell({ children, displayName, displayLocation, eventSou
               </div>
             </div>
           </div>
+          )}
 
           {/* Driving Times Slide */}
+          {displaySettings.showDrivingCard && (
           <div style={{
             position: 'absolute',
             top: '20px',
             left: '20px',
             right: '20px',
             bottom: '20px',
-            opacity: currentTransitSlide === 2 ? 1 : 0,
+            opacity: currentTransitSlide === getSlideIndex('driving') ? 1 : 0,
             transition: 'opacity 1s ease-in-out',
             overflow: 'hidden',
           }}>
@@ -740,7 +949,96 @@ export default function Shell({ children, displayName, displayLocation, eventSou
               )) : <div style={{ padding: '12px', color: '#666', fontSize: '1.5em' }}>Loading driving times...</div>}
             </div>
           </div>
-        </div>
+          )}
+
+          {/* Bikeshare Availability Slide */}
+          {displaySettings.showBikeshareCard && (
+          <div style={{
+            position: 'absolute',
+            top: '20px',
+            left: '20px',
+            right: '20px',
+            bottom: '20px',
+            opacity: currentTransitSlide === getSlideIndex('bikeshare') ? 1 : 0,
+            transition: 'opacity 1s ease-in-out',
+            overflow: 'hidden',
+          }}>
+            <h2 style={{ color: '#333', fontSize: '2.8em', marginBottom: '15px', borderBottom: '3px solid #667eea', paddingBottom: '10px' }}>
+              Capital Bikeshare - Navy Yard
+            </h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '20px' }}>
+              {bikeStations.length > 0 ? (
+                <>
+                  <div style={{
+                    background: 'linear-gradient(to right, #e8f5e9, #c8e6c9)',
+                    padding: '20px',
+                    borderRadius: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '20px',
+                  }}>
+                    <img src="/cabi.svg" alt="Capital Bikeshare" style={{ width: '100px', height: '100px' }} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '1.8em', fontWeight: 'bold', color: '#1b5e20', marginBottom: '10px' }}>
+                        {bikeStations[0]?.name || 'Station 1'}
+                      </div>
+                      <div style={{ display: 'flex', gap: '30px' }}>
+                        <div>
+                          <div style={{ fontSize: '1.3em', color: '#666' }}>Bikes Available</div>
+                          <div style={{ fontSize: '3em', fontWeight: 'bold', color: '#2e7d32' }}>
+                            {bikeStations[0]?.bikes || 0}
+                          </div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '1.3em', color: '#666' }}>Docks Available</div>
+                          <div style={{ fontSize: '3em', fontWeight: 'bold', color: '#1565c0' }}>
+                            {bikeStations[0]?.docks || 0}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {bikeStations.slice(1).map((station, i) => (
+                    <div key={i} style={{
+                      background: 'linear-gradient(to right, #f5f7fa, #c3cfe2)',
+                      padding: '15px 20px',
+                      borderRadius: '10px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}>
+                      <div style={{ fontSize: '1.5em', fontWeight: 'bold', color: '#333' }}>
+                        {station.name}
+                      </div>
+                      <div style={{ display: 'flex', gap: '40px' }}>
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{ fontSize: '1.2em', color: '#666' }}>Bikes</div>
+                          <div style={{ fontSize: '2.2em', fontWeight: 'bold', color: '#2e7d32' }}>
+                            {station.bikes}
+                          </div>
+                        </div>
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{ fontSize: '1.2em', color: '#666' }}>Docks</div>
+                          <div style={{ fontSize: '2.2em', fontWeight: 'bold', color: '#1565c0' }}>
+                            {station.docks}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </>
+              ) : (
+                <div style={{ padding: '12px', color: '#666', fontSize: '1.5em' }}>Loading bikeshare data...</div>
+              )}
+            </div>
+            <div style={{ marginTop: '20px', fontSize: '1.2em', color: '#888', textAlign: 'center' }}>
+              Updates every minute
+            </div>
+          </div>
+          )}
+          </div>
+        )}
       </div>
 
       <style>

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <!-- Red circle background (CaBi brand color) -->
+  <circle cx="50" cy="50" r="48" fill="#D32F2F" stroke="#B71C1C" stroke-width="2"/>
+
+  <!-- White bike icon -->
+  <g fill="white">
+    <!-- Rear wheel -->
+    <circle cx="30" cy="65" r="10" fill="none" stroke="white" stroke-width="2.5"/>
+    <circle cx="30" cy="65" r="2" fill="white"/>
+
+    <!-- Front wheel -->
+    <circle cx="70" cy="65" r="10" fill="none" stroke="white" stroke-width="2.5"/>
+    <circle cx="70" cy="65" r="2" fill="white"/>
+
+    <!-- Frame -->
+    <path d="M 30 65 L 45 40 L 55 40 L 70 65" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 30 65 L 50 55 L 70 65" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Seat post and seat -->
+    <line x1="45" y1="40" x2="45" y2="32" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+    <ellipse cx="45" cy="30" rx="5" ry="3" fill="white"/>
+
+    <!-- Handlebars -->
+    <path d="M 55 40 L 60 35" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="58" y1="36" x2="62" y2="36" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+</svg>

@@ -1,4 +1,4 @@
-import { IsString, IsIn } from 'class-validator';
+import { IsString, IsIn, IsBoolean } from 'class-validator';
 
 export class UpdateFpconDto {
   @IsString()
@@ -15,4 +15,27 @@ export class UpdateLanDto {
 export class UpdateApiKeyDto {
   @IsString()
   apiKey: string;
+}
+
+export class UpdateDisplayFeaturesDto {
+  @IsBoolean()
+  showTicker?: boolean;
+
+  @IsBoolean()
+  showRotatingCards?: boolean;
+
+  @IsBoolean()
+  showMetroCard?: boolean;
+
+  @IsBoolean()
+  showStatusCard?: boolean;
+
+  @IsBoolean()
+  showDrivingCard?: boolean;
+
+  @IsBoolean()
+  showBikeshareCard?: boolean;
+
+  @IsBoolean()
+  showNewsHeadlines?: boolean;
 }
